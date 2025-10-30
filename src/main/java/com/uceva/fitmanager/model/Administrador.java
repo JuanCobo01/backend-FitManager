@@ -1,5 +1,6 @@
 package com.uceva.fitmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,5 +16,9 @@ public class Administrador {
     private String correo;
     private String contrasena;
     private String rol;
-}
 
+    // Relación uno a uno con Gimnasio (lado inverso)
+    @OneToOne(mappedBy = "administrador")
+    @JsonBackReference(value = "admin-gim")
+    private Gimnasio gimnasio;
+}

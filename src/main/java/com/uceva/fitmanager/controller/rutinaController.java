@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Rutina;
-import com.uceva.fitmanager.service.rutinaService;
+import com.uceva.fitmanager.service.IRutinaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public class rutinaController {
 
     @Autowired
-    private rutinaService rutinaService;
+    private IRutinaService rutinaService;
 
     @GetMapping
     public List<Rutina> getAllRutinas() {

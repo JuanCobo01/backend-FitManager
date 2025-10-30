@@ -1,5 +1,7 @@
 package com.uceva.fitmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,10 +21,16 @@ public class Entrenador {
     private String especialidad;
 
     @OneToMany(mappedBy = "entrenador")
+    @JsonManagedReference(value = "entrenador-rutinas")
     private List<Rutina> Rutinas;
 
     @OneToMany(mappedBy = "entrenador")
+    @JsonManagedReference(value = "entrenador-pagos")
     private List<Pago> pagos;
+
+    // Relación muchos a uno con Gimnasio
+    @ManyToOne
+    @JoinColumn(name = "id_gimnasio")
+    @JsonBackReference(value = "gim-entrenador")
+    private Gimnasio gimnasio;
 }
-
-

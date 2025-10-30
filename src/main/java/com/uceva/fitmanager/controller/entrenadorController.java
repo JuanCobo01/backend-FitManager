@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Entrenador;
-import com.uceva.fitmanager.service.entrenadorService;
+import com.uceva.fitmanager.service.IEntrenadorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public class entrenadorController {
 
     @Autowired
-    private entrenadorService entrenadorService;
+    private IEntrenadorService entrenadorService;
 
     @GetMapping
     public List<Entrenador> getAllEntrenadores() {

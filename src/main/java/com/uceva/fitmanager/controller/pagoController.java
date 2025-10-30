@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Pago;
-import com.uceva.fitmanager.service.pagoService;
+import com.uceva.fitmanager.service.IPagoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class pagoController {
 
     @Autowired
-    private pagoService pagoService;
+    private IPagoService pagoService;
 
     @GetMapping
     public List<Pago> getAllPagos() {

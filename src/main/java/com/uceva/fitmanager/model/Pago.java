@@ -23,6 +23,11 @@ public class Pago {
 
     @ManyToOne
     @JoinColumn(name = "id_usuario")
-    @JsonBackReference
+    @JsonBackReference(value = "usuario-pagos")
     private Usuario usuario;
+
+    @ManyToOne
+    @JoinColumn(name = "id_entrenador")
+    @JsonBackReference(value = "entrenador-pagos")
+    private Entrenador entrenador;
 }

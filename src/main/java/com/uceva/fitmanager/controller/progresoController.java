@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Progreso;
-import com.uceva.fitmanager.service.progresoService;
+import com.uceva.fitmanager.service.IProgresoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class progresoController {
 
     @Autowired
-    private progresoService progresoService;
+    private IProgresoService progresoService;
 
     @GetMapping
     public List<Progreso> getAllProgresos() {

@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Usuario;
-import com.uceva.fitmanager.service.usuarioService;
+import com.uceva.fitmanager.service.IUsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import java.util.List;
 public class usuarioController {
 
     @Autowired
-    private usuarioService usuarioService;
+    private IUsuarioService usuarioService;
 
     @GetMapping
     public List<Usuario> getAllUsuarios() {
@@ -56,4 +56,3 @@ public class usuarioController {
 
 
 }
-

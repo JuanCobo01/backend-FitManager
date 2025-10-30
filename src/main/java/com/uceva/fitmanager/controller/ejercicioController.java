@@ -1,7 +1,7 @@
 package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Ejercicio;
-import com.uceva.fitmanager.service.ejercicioService;
+import com.uceva.fitmanager.service.IEjercicioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public class ejercicioController {
 
     @Autowired
-    private ejercicioService ejercicioService;
+    private IEjercicioService ejercicioService;
 
     @GetMapping
     public List<Ejercicio> getAllEjercicios() {

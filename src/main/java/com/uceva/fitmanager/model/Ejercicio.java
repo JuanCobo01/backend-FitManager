@@ -1,5 +1,6 @@
 package com.uceva.fitmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,9 +16,10 @@ public class Ejercicio {
 
     private String nombreEjercicio;
     private String descripcion;
+    private String detalles;
     private String grupoMuscular;
 
     @OneToMany(mappedBy = "ejercicio")
-    private List<DetalleRutina> detalles;
+    @JsonManagedReference(value = "ejercicio-detalles")
+    private List<DetalleRutina> detallesRutina;
 }
-
