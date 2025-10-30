@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/progresos")
+@RequestMapping("/progresos") // Removido /api ya que se maneja en WebConfig
 @CrossOrigin(origins = "*")
 public class progresoController {
 

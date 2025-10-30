@@ -49,4 +49,9 @@ public class AdministradorServiceImpl implements IAdministradorService {
                 })
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con id " + id));
     }
+
+    @Override
+    public Optional<Administrador> findByEmailAndPassword(String email, String password) {
+        return administradorRepository.findByCorreoAndContrasena(email, password);
+    }
 }
