@@ -11,5 +11,5 @@ public interface IAdministradorService {
     Administrador save(Administrador administrador);
     void delete(Long id);
     Administrador update(Long id, Administrador administradorActualizado);
+    Optional<Administrador> findByEmailAndPassword(String email, String password);
 }
-

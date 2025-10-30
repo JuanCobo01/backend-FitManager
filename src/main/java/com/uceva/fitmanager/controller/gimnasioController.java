@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/gimnasios")
+@RequestMapping("/gimnasios") // Removido /api ya que se maneja en WebConfig
 @CrossOrigin(origins = "*")
 public class gimnasioController {
 

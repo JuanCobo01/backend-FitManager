@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/detalle-rutina")
+@RequestMapping("/detalle-rutinas") // Removido /api ya que se maneja en WebConfig
 @CrossOrigin(origins = "*")
 public class detalleRutinaController {
 
