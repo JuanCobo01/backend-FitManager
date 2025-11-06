@@ -31,3 +31,32 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### ARCHIVOS CON INFORMACIÓN SENSIBLE ###
+# Variables de entorno con datos reales
+.env
+.env.local
+.env.production
+.env.staging
+
+# Archivos de configuración local con credenciales
+application-local.properties
+application-secrets.properties
+*-secrets.properties
+
+# Archivos de respaldo de base de datos
+*.sql.backup
+*.dump
+database_backup/
+
+# Certificados y claves
+*.p12
+*.jks
+*.pem
+*.key
+*.crt
+
+# Logs que pueden contener información sensible
+logs/
+*.log
+spring.log

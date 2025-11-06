@@ -22,7 +22,7 @@ public class Entrenador {
 
     @OneToMany(mappedBy = "entrenador")
     @JsonManagedReference(value = "entrenador-rutinas")
-    private List<Rutina> Rutinas;
+    private List<Rutina> rutinas; // Corregido de "Rutinas" a "rutinas"
 
     @OneToMany(mappedBy = "entrenador")
     @JsonManagedReference(value = "entrenador-pagos")

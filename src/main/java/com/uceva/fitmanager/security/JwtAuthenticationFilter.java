@@ -77,11 +77,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
 
-        // Rutas que no requieren autenticación
+        // Rutas que no requieren autenticación JWT
         return path.contains("/auth/") ||
                path.contains("/public/") ||
-               path.equals("/fitmanager/v1/usuarios/login") ||
-               path.equals("/fitmanager/v1/entrenadores/login") ||
-               path.equals("/fitmanager/v1/administradores/login");
+               path.contains("/error") ||
+               path.startsWith("/fitmanager/v1/auth/"); // Añadida esta línea importante
     }
 }

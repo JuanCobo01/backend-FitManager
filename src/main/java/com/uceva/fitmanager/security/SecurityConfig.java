@@ -31,12 +31,11 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Rutas públicas - no requieren autenticación
+                // Rutas completamente públicas (sin filtro JWT)
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/v1/auth/**").permitAll()
-                .requestMatchers("/v1/usuarios/login").permitAll()
-                .requestMatchers("/v1/entrenadores/login").permitAll()
-                .requestMatchers("/v1/administradores/login").permitAll()
-                .requestMatchers("/v1/public/**").permitAll()
+                .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/error").permitAll()
 
                 // Rutas para administradores
                 .requestMatchers("/v1/administradores/**").hasRole("ADMINISTRADOR")
@@ -50,11 +49,12 @@ public class SecurityConfig {
                 // Rutas para usuarios
                 .requestMatchers("/v1/usuarios/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
                 .requestMatchers("/v1/progresos/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
+                .requestMatchers("/v1/detalle-rutinas/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
 
                 // Rutas financieras - solo admin y entrenadores
                 .requestMatchers("/v1/pagos/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR")
 
-                // Todas las demás rutas requieren autenticación
+                // Cualquier otra ruta requiere autenticación
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
