@@ -1,21 +1,22 @@
 package com.uceva.fitmanager.service.impl;
 
+import com.uceva.fitmanager.exception.ResourceNotFoundException;
 import com.uceva.fitmanager.model.Administrador;
 import com.uceva.fitmanager.repository.administradorRepository;
 import com.uceva.fitmanager.service.IAdministradorService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AdministradorServiceImpl implements IAdministradorService {
 
     private final administradorRepository administradorRepository;
-
-    public AdministradorServiceImpl(administradorRepository administradorRepository) {
-        this.administradorRepository = administradorRepository;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<Administrador> findAll() {
@@ -29,6 +30,10 @@ public class AdministradorServiceImpl implements IAdministradorService {
 
     @Override
     public Administrador save(Administrador administrador) {
+        // Encriptar la contraseña antes de guardar
+        if (administrador.getContrasena() != null && !administrador.getContrasena().isEmpty()) {
+            administrador.setContrasena(passwordEncoder.encode(administrador.getContrasena()));
+        }
         return administradorRepository.save(administrador);
     }
 
@@ -43,15 +48,26 @@ public class AdministradorServiceImpl implements IAdministradorService {
                 .map(a -> {
                     a.setNombre(administradorActualizado.getNombre());
                     a.setCorreo(administradorActualizado.getCorreo());
-                    a.setContrasena(administradorActualizado.getContrasena());
+                    // Solo actualizar contraseña si se proporciona una nueva
+                    if (administradorActualizado.getContrasena() != null && !administradorActualizado.getContrasena().isEmpty()) {
+                        a.setContrasena(passwordEncoder.encode(administradorActualizado.getContrasena()));
+                    }
                     a.setRol(administradorActualizado.getRol());
                     return administradorRepository.save(a);
                 })
-                .orElseThrow(() -> new RuntimeException("Administrador no encontrado con id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Administrador", "id", id));
     }
 
     @Override
     public Optional<Administrador> findByEmailAndPassword(String email, String password) {
-        return administradorRepository.findByCorreoAndContrasena(email, password);
+        // Buscar administrador por email
+        Optional<Administrador> administradorOpt = administradorRepository.findByCorreo(email);
+        
+        // Verificar si existe y si la contraseña coincide usando BCrypt
+        if (administradorOpt.isPresent() && passwordEncoder.matches(password, administradorOpt.get().getContrasena())) {
+            return administradorOpt;
+        }
+        
+        return Optional.empty();
     }
 }

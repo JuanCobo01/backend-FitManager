@@ -12,7 +12,6 @@ import java.util.Optional;
 public interface administradorRepository extends JpaRepository<Administrador, Long> {
     List<Administrador> findByRol(String rol);
     List<Administrador> findByNombreContainingIgnoreCase(String nombre);
+    Optional<Administrador> findByCorreo(String correo);
     Optional<Administrador> findByCorreoAndContrasena(String correo, String contrasena);
-    
-
 }

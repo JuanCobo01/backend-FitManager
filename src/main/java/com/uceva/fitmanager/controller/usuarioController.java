@@ -2,7 +2,10 @@ package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Usuario;
 import com.uceva.fitmanager.service.IUsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +24,12 @@ public class usuarioController {
         return usuarioService.findAll();
     }
 
+    // Endpoint con paginación
+    @GetMapping("/paginado")
+    public Page<Usuario> getAllUsuariosPaginado(Pageable pageable) {
+        return usuarioService.findAllPaginated(pageable);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> getUsuarioById(@PathVariable Long id) {
         return usuarioService.findById(id)
@@ -29,12 +38,12 @@ public class usuarioController {
     }
 
     @PostMapping
-    public Usuario createUsuario(@RequestBody Usuario usuario) {
+    public Usuario createUsuario(@Valid @RequestBody Usuario usuario) {
         return usuarioService.save(usuario);
     }
 
     @PutMapping("/actualizar/{id}")
-    public Usuario updateUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
+    public Usuario updateUsuario(@PathVariable Long id, @Valid @RequestBody Usuario usuario) {
         return usuarioService.update(id,usuario);
     }
 

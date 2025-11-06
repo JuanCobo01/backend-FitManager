@@ -2,6 +2,7 @@ package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Ejercicio;
 import com.uceva.fitmanager.service.IEjercicioService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,12 +31,12 @@ public class ejercicioController {
     }
 
     @PostMapping
-    public Ejercicio createEjercicio(@RequestBody Ejercicio ejercicio) {
+    public Ejercicio createEjercicio(@Valid @RequestBody Ejercicio ejercicio) {
         return ejercicioService.save(ejercicio);
     }
 
     @PutMapping("/actualizar/{id}")
-    public Ejercicio updateEjercicio(@PathVariable Long id, @RequestBody Ejercicio ejercicio) {
+    public Ejercicio updateEjercicio(@PathVariable Long id, @Valid @RequestBody Ejercicio ejercicio) {
         return ejercicioService.update(id, ejercicio);
     }
 

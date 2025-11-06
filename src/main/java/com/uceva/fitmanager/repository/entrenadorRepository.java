@@ -12,7 +12,6 @@ import java.util.Optional;
 public interface entrenadorRepository extends JpaRepository<Entrenador, Long> {
     List<Entrenador> findByEspecialidad(String especialidad);
     List<Entrenador> findByNombreContainingIgnoreCase(String nombre);
+    Optional<Entrenador> findByCorreo(String correo);
     Optional<Entrenador> findByCorreoAndContrasena(String correo, String contrasena);
-    
-
 }

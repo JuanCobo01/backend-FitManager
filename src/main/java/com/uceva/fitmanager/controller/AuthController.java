@@ -1,5 +1,8 @@
 package com.uceva.fitmanager.controller;
 
+import com.uceva.fitmanager.exception.BadRequestException;
+import com.uceva.fitmanager.exception.DuplicateResourceException;
+import com.uceva.fitmanager.exception.UnauthorizedException;
 import com.uceva.fitmanager.model.Administrador;
 import com.uceva.fitmanager.model.Entrenador;
 import com.uceva.fitmanager.model.Usuario;
@@ -12,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,17 +34,171 @@ public class AuthController {
 
     @PostMapping("/usuario/login")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
+        validateLoginRequest(loginRequest);
         return authenticateUser(loginRequest, "USUARIO");
     }
 
     @PostMapping("/entrenador/login")
     public ResponseEntity<?> loginEntrenador(@RequestBody LoginRequest loginRequest) {
+        validateLoginRequest(loginRequest);
         return authenticateUser(loginRequest, "ENTRENADOR");
     }
 
     @PostMapping("/administrador/login")
     public ResponseEntity<?> loginAdministrador(@RequestBody LoginRequest loginRequest) {
+        validateLoginRequest(loginRequest);
         return authenticateUser(loginRequest, "ADMINISTRADOR");
+    }
+
+    // Endpoints de Registro
+    @PostMapping("/usuario/register")
+    public ResponseEntity<?> registerUsuario(@RequestBody RegisterUsuarioRequest registerRequest) {
+        try {
+            validateRegisterUsuarioRequest(registerRequest);
+            
+            // Verificar si el email ya existe
+            if (usuarioService.findByEmailAndPassword(registerRequest.getEmail(), "").isPresent()) {
+                throw new DuplicateResourceException("Usuario", "email", registerRequest.getEmail());
+            }
+            
+            // Crear nuevo usuario
+            Usuario nuevoUsuario = new Usuario();
+            nuevoUsuario.setNombre(registerRequest.getNombre());
+            nuevoUsuario.setCorreo(registerRequest.getEmail());
+            nuevoUsuario.setContrasena(registerRequest.getPassword());
+            nuevoUsuario.setEdad(registerRequest.getEdad());
+            nuevoUsuario.setAltura(registerRequest.getAltura());
+            nuevoUsuario.setPesoInicial(registerRequest.getPesoInicial());
+            nuevoUsuario.setFechaRegistro(LocalDate.now());
+            
+            // Guardar usuario (la contraseña se encriptará automáticamente en el servicio)
+            Usuario usuarioGuardado = usuarioService.save(nuevoUsuario);
+            
+            // Generar token
+            String token = jwtService.generateToken(
+                    usuarioGuardado.getCorreo(),
+                    "USUARIO",
+                    usuarioGuardado.getIdUsuario()
+            );
+            
+            AuthResponse response = AuthResponse.builder()
+                    .token(token)
+                    .userType("USUARIO")
+                    .userId(usuarioGuardado.getIdUsuario())
+                    .userName(usuarioGuardado.getNombre())
+                    .email(usuarioGuardado.getCorreo())
+                    .message("Usuario registrado exitosamente")
+                    .build();
+            
+            return ResponseEntity.ok(response);
+        } catch (DuplicateResourceException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al registrar usuario: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/entrenador/register")
+    public ResponseEntity<?> registerEntrenador(@RequestBody RegisterEntrenadorRequest registerRequest) {
+        try {
+            validateRegisterEntrenadorRequest(registerRequest);
+            
+            // Crear nuevo entrenador
+            Entrenador nuevoEntrenador = new Entrenador();
+            nuevoEntrenador.setNombre(registerRequest.getNombre());
+            nuevoEntrenador.setCorreo(registerRequest.getEmail());
+            nuevoEntrenador.setContrasena(registerRequest.getPassword());
+            nuevoEntrenador.setEspecialidad(registerRequest.getEspecialidad());
+            
+            Entrenador entrenadorGuardado = entrenadorService.save(nuevoEntrenador);
+            
+            String token = jwtService.generateToken(
+                    entrenadorGuardado.getCorreo(),
+                    "ENTRENADOR",
+                    entrenadorGuardado.getIdEntrenador()
+            );
+            
+            AuthResponse response = AuthResponse.builder()
+                    .token(token)
+                    .userType("ENTRENADOR")
+                    .userId(entrenadorGuardado.getIdEntrenador())
+                    .userName(entrenadorGuardado.getNombre())
+                    .email(entrenadorGuardado.getCorreo())
+                    .especialidad(entrenadorGuardado.getEspecialidad())
+                    .message("Entrenador registrado exitosamente")
+                    .build();
+            
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al registrar entrenador: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String authHeader,
+                                          @RequestBody ChangePasswordRequest request) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Token no proporcionado");
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtService.validateToken(token)) {
+                throw new UnauthorizedException("Token inválido o expirado");
+            }
+            
+            String email = jwtService.extractEmail(token);
+            String userType = jwtService.extractUserType(token);
+            
+            validateChangePasswordRequest(request);
+            
+            // Cambiar contraseña según el tipo de usuario
+            switch (userType.toUpperCase()) {
+                case "USUARIO":
+                    Optional<Usuario> usuarioOpt = usuarioService.findByEmailAndPassword(email, request.getCurrentPassword());
+                    if (usuarioOpt.isEmpty()) {
+                        throw new UnauthorizedException("Contraseña actual incorrecta");
+                    }
+                    Usuario usuario = usuarioOpt.get();
+                    usuario.setContrasena(request.getNewPassword());
+                    usuarioService.update(usuario.getIdUsuario(), usuario);
+                    break;
+                    
+                case "ENTRENADOR":
+                    Optional<Entrenador> entrenadorOpt = entrenadorService.findByEmailAndPassword(email, request.getCurrentPassword());
+                    if (entrenadorOpt.isEmpty()) {
+                        throw new UnauthorizedException("Contraseña actual incorrecta");
+                    }
+                    Entrenador entrenador = entrenadorOpt.get();
+                    entrenador.setContrasena(request.getNewPassword());
+                    entrenadorService.update(entrenador.getIdEntrenador(), entrenador);
+                    break;
+                    
+                case "ADMINISTRADOR":
+                    Optional<Administrador> adminOpt = administradorService.findByEmailAndPassword(email, request.getCurrentPassword());
+                    if (adminOpt.isEmpty()) {
+                        throw new UnauthorizedException("Contraseña actual incorrecta");
+                    }
+                    Administrador admin = adminOpt.get();
+                    admin.setContrasena(request.getNewPassword());
+                    administradorService.update(admin.getIdAdmin(), admin);
+                    break;
+                    
+                default:
+                    throw new BadRequestException("Tipo de usuario inválido");
+            }
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Contraseña cambiada exitosamente");
+            return ResponseEntity.ok(response);
+            
+        } catch (UnauthorizedException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al cambiar contraseña: " + e.getMessage());
+        }
     }
 
     @PostMapping("/logout")
@@ -91,13 +249,12 @@ public class AuthController {
                 case "ADMINISTRADOR":
                     return authenticateAdministrador(loginRequest);
                 default:
-                    return ResponseEntity.badRequest().body("Tipo de usuario inválido");
+                    throw new BadRequestException("Tipo de usuario inválido");
             }
+        } catch (UnauthorizedException | BadRequestException e) {
+            throw e;
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Error de autenticación");
-            errorResponse.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            throw new BadRequestException("Error de autenticación: " + e.getMessage());
         }
     }
 
@@ -126,7 +283,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
 
-        return ResponseEntity.badRequest().body("Credenciales inválidas");
+        throw new UnauthorizedException("Credenciales inválidas");
     }
 
     private ResponseEntity<?> authenticateEntrenador(LoginRequest loginRequest) {
@@ -155,7 +312,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
 
-        return ResponseEntity.badRequest().body("Credenciales inválidas");
+        throw new UnauthorizedException("Credenciales inválidas");
     }
 
     private ResponseEntity<?> authenticateAdministrador(LoginRequest loginRequest) {
@@ -183,7 +340,74 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
 
-        return ResponseEntity.badRequest().body("Credenciales inválidas");
+        throw new UnauthorizedException("Credenciales inválidas");
+    }
+
+    // Métodos de validación
+    private void validateLoginRequest(LoginRequest request) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new BadRequestException("El email es requerido");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new BadRequestException("La contraseña es requerida");
+        }
+        if (!request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new BadRequestException("Formato de email inválido");
+        }
+    }
+
+    private void validateRegisterUsuarioRequest(RegisterUsuarioRequest request) {
+        if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {
+            throw new BadRequestException("El nombre es requerido");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new BadRequestException("El email es requerido");
+        }
+        if (!request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new BadRequestException("Formato de email inválido");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            throw new BadRequestException("La contraseña debe tener al menos 6 caracteres");
+        }
+        if (request.getEdad() <= 0 || request.getEdad() > 120) {
+            throw new BadRequestException("La edad debe estar entre 1 y 120 años");
+        }
+        if (request.getAltura() <= 0 || request.getAltura() > 3.0) {
+            throw new BadRequestException("La altura debe ser un valor válido");
+        }
+        if (request.getPesoInicial() <= 0 || request.getPesoInicial() > 500) {
+            throw new BadRequestException("El peso debe ser un valor válido");
+        }
+    }
+
+    private void validateRegisterEntrenadorRequest(RegisterEntrenadorRequest request) {
+        if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {
+            throw new BadRequestException("El nombre es requerido");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new BadRequestException("El email es requerido");
+        }
+        if (!request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new BadRequestException("Formato de email inválido");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            throw new BadRequestException("La contraseña debe tener al menos 6 caracteres");
+        }
+        if (request.getEspecialidad() == null || request.getEspecialidad().trim().isEmpty()) {
+            throw new BadRequestException("La especialidad es requerida");
+        }
+    }
+
+    private void validateChangePasswordRequest(ChangePasswordRequest request) {
+        if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
+            throw new BadRequestException("La contraseña actual es requerida");
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
+            throw new BadRequestException("La nueva contraseña debe tener al menos 6 caracteres");
+        }
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new BadRequestException("La nueva contraseña debe ser diferente a la actual");
+        }
     }
 
     // DTOs internos
@@ -191,6 +415,30 @@ public class AuthController {
     public static class LoginRequest {
         private String email;
         private String password;
+    }
+
+    @lombok.Data
+    public static class RegisterUsuarioRequest {
+        private String nombre;
+        private String email;
+        private String password;
+        private int edad;
+        private double altura;
+        private double pesoInicial;
+    }
+
+    @lombok.Data
+    public static class RegisterEntrenadorRequest {
+        private String nombre;
+        private String email;
+        private String password;
+        private String especialidad;
+    }
+
+    @lombok.Data
+    public static class ChangePasswordRequest {
+        private String currentPassword;
+        private String newPassword;
     }
 
     @lombok.Data

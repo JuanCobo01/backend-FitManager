@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .requestMatchers("/v1/entrenadores/login").permitAll()
                 .requestMatchers("/v1/administradores/login").permitAll()
                 .requestMatchers("/v1/public/**").permitAll()
+                .requestMatchers("/error").permitAll()
 
                 // Rutas para administradores
                 .requestMatchers("/v1/administradores/**").hasRole("ADMINISTRADOR")

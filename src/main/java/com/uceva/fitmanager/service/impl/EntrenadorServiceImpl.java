@@ -1,21 +1,22 @@
 package com.uceva.fitmanager.service.impl;
 
+import com.uceva.fitmanager.exception.ResourceNotFoundException;
 import com.uceva.fitmanager.model.Entrenador;
 import com.uceva.fitmanager.repository.entrenadorRepository;
 import com.uceva.fitmanager.service.IEntrenadorService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class EntrenadorServiceImpl implements IEntrenadorService {
 
     private final entrenadorRepository entrenadorRepository;
-
-    public EntrenadorServiceImpl(entrenadorRepository entrenadorRepository) {
-        this.entrenadorRepository = entrenadorRepository;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<Entrenador> findAll() {
@@ -29,6 +30,10 @@ public class EntrenadorServiceImpl implements IEntrenadorService {
 
     @Override
     public Entrenador save(Entrenador entrenador) {
+        // Encriptar la contraseña antes de guardar
+        if (entrenador.getContrasena() != null && !entrenador.getContrasena().isEmpty()) {
+            entrenador.setContrasena(passwordEncoder.encode(entrenador.getContrasena()));
+        }
         return entrenadorRepository.save(entrenador);
     }
 
@@ -43,15 +48,26 @@ public class EntrenadorServiceImpl implements IEntrenadorService {
                 .map(e -> {
                     e.setNombre(entrenadorActualizado.getNombre());
                     e.setCorreo(entrenadorActualizado.getCorreo());
-                    e.setContrasena(entrenadorActualizado.getContrasena());
+                    // Solo actualizar contraseña si se proporciona una nueva
+                    if (entrenadorActualizado.getContrasena() != null && !entrenadorActualizado.getContrasena().isEmpty()) {
+                        e.setContrasena(passwordEncoder.encode(entrenadorActualizado.getContrasena()));
+                    }
                     e.setEspecialidad(entrenadorActualizado.getEspecialidad());
                     return entrenadorRepository.save(e);
                 })
-                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado con id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Entrenador", "id", id));
     }
 
     @Override
     public Optional<Entrenador> findByEmailAndPassword(String email, String password) {
-        return entrenadorRepository.findByCorreoAndContrasena(email, password);
+        // Buscar entrenador por email
+        Optional<Entrenador> entrenadorOpt = entrenadorRepository.findByCorreo(email);
+        
+        // Verificar si existe y si la contraseña coincide usando BCrypt
+        if (entrenadorOpt.isPresent() && passwordEncoder.matches(password, entrenadorOpt.get().getContrasena())) {
+            return entrenadorOpt;
+        }
+        
+        return Optional.empty();
     }
 }

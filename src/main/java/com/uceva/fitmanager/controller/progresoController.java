@@ -2,6 +2,7 @@ package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.model.Progreso;
 import com.uceva.fitmanager.service.IProgresoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,12 +32,12 @@ public class progresoController {
     }
 
     @PostMapping
-    public Progreso createProgreso(@RequestBody Progreso progreso) {
+    public Progreso createProgreso(@Valid @RequestBody Progreso progreso) {
         return progresoService.save(progreso);
     }
 
     @PutMapping("/actualizar/{id}")
-    public Progreso updateProgreso(@PathVariable Long id, @RequestBody Progreso progreso) {
+    public Progreso updateProgreso(@PathVariable Long id, @Valid @RequestBody Progreso progreso) {
         return progresoService.update(id, progreso);
     }
 
