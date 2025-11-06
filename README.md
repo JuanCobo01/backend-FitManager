@@ -9,8 +9,12 @@ FitManager es un sistema backend desarrollado con Spring Boot para la gestión i
 - **Java 17**
 - **Spring Boot 3.5.6**
 - **Spring Data JPA** - Para persistencia de datos
+- **Spring Security** - Autenticación y autorización
 - **Spring Web** - Para API REST
-- **MySQL 8** - Base de datos
+- **PostgreSQL 12+** - Base de datos
+- **BCrypt** - Encriptación de contraseñas
+- **JWT (JJWT 0.12.3)** - Tokens de autenticación
+- **Bean Validation** - Validación de datos
 - **Lombok** - Reducción de código boilerplate
 - **Maven** - Gestión de dependencias
 
@@ -85,83 +89,124 @@ src/main/java/com/uceva/fitmanager/
 
 ## 🚀 API Endpoints
 
-### 👤 Usuarios (`/api/usuarios`)
+### � Autenticación (`/v1/auth`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/usuarios` | Obtener todos los usuarios |
-| GET | `/api/usuarios/{id}` | Obtener usuario por ID |
-| POST | `/api/usuarios` | Crear nuevo usuario |
-| PUT | `/api/usuarios/actualizar/{id}` | Actualizar usuario |
-| DELETE | `/api/usuarios/borrar/{id}` | Eliminar usuario |
-| POST | `/api/usuarios/login` | Login de usuario |
+| POST | `/v1/auth/usuario/login` | Login de usuario |
+| POST | `/v1/auth/entrenador/login` | Login de entrenador |
+| POST | `/v1/auth/administrador/login` | Login de administrador |
+| POST | `/v1/auth/usuario/register` | Registro de nuevo usuario |
+| POST | `/v1/auth/entrenador/register` | Registro de nuevo entrenador |
+| POST | `/v1/auth/change-password` | Cambiar contraseña (requiere autenticación) |
+| POST | `/v1/auth/logout` | Cerrar sesión |
+| POST | `/v1/auth/refresh-activity` | Refrescar actividad de sesión |
 
 **Ejemplo Login:**
 ```json
 {
-  "correo": "juan.perez@email.com",
-  "contrasena": "password123"
+  "email": "juan@email.com",
+  "password": "password123"
 }
 ```
 
-### 🏋️ Entrenadores (`/api/entrenadores`)
+**Respuesta Login:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "userType": "USUARIO",
+  "userId": 1,
+  "userName": "Juan Pérez",
+  "email": "juan@email.com",
+  "message": "Login exitoso"
+}
+```
+
+**Ejemplo Registro:**
+```json
+{
+  "nombre": "Juan Pérez",
+  "email": "juan@email.com",
+  "password": "password123",
+  "edad": 25,
+  "altura": 1.75,
+  "pesoInicial": 70.5
+}
+```
+
+### 👤 Usuarios (`/v1/usuarios`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/entrenadores` | Obtener todos los entrenadores |
-| GET | `/api/entrenadores/buscar/{id}` | Obtener entrenador por ID |
-| POST | `/api/entrenadores` | Crear nuevo entrenador |
-| PUT | `/api/entrenadores/actualizar/{id}` | Actualizar entrenador |
-| DELETE | `/api/entrenadores/borrar/{id}` | Eliminar entrenador |
-| POST | `/api/entrenadores/login` | Login de entrenador |
+| GET | `/v1/usuarios` | Obtener todos los usuarios |
+| GET | `/v1/usuarios/paginado` | Obtener usuarios con paginación |
+| GET | `/v1/usuarios/{id}` | Obtener usuario por ID |
+| POST | `/v1/usuarios` | Crear nuevo usuario |
+| PUT | `/v1/usuarios/actualizar/{id}` | Actualizar usuario |
+| DELETE | `/v1/usuarios/borrar/{id}` | Eliminar usuario |
 
-### 💪 Ejercicios (`/api/ejercicios`)
+**Ejemplo Paginación:**
+```bash
+GET /v1/usuarios/paginado?page=0&size=10&sort=nombre,asc
+```
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/ejercicios` | Obtener todos los ejercicios |
-| GET | `/api/ejercicios/buscar/{id}` | Obtener ejercicio por ID |
-| POST | `/api/ejercicios` | Crear nuevo ejercicio |
-| PUT | `/api/ejercicios/actualizar/{id}` | Actualizar ejercicio |
-| DELETE | `/api/ejercicios/borrar/{id}` | Eliminar ejercicio |
-| GET | `/api/ejercicios/categoria/{grupoMuscular}` | Ejercicios por grupo muscular |
-
-### 📋 Rutinas (`/api/rutinas`)
+### 🏋️ Entrenadores (`/v1/entrenadores`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/rutinas` | Obtener todas las rutinas |
-| GET | `/api/rutinas/buscar/{id}` | Obtener rutina por ID |
-| POST | `/api/rutinas` | Crear nueva rutina |
-| PUT | `/api/rutinas/actualizar/{id}` | Actualizar rutina |
-| DELETE | `/api/rutinas/borrar/{id}` | Eliminar rutina |
-| GET | `/api/rutinas/usuario/{usuarioId}` | Rutinas por usuario |
-| GET | `/api/rutinas/entrenador/{entrenadorId}` | Rutinas por entrenador |
+| GET | `/v1/entrenadores` | Obtener todos los entrenadores |
+| GET | `/v1/entrenadores/buscar/{id}` | Obtener entrenador por ID |
+| POST | `/v1/entrenadores` | Crear nuevo entrenador |
+| PUT | `/v1/entrenadores/actualizar/{id}` | Actualizar entrenador |
+| DELETE | `/v1/entrenadores/borrar/{id}` | Eliminar entrenador |
 
-### 📈 Progresos (`/api/progresos`)
+### 💪 Ejercicios (`/v1/ejercicios`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/progresos` | Obtener todos los progresos |
-| GET | `/api/progresos/buscar/{id}` | Obtener progreso por ID |
-| POST | `/api/progresos` | Crear nuevo progreso |
-| PUT | `/api/progresos/actualizar/{id}` | Actualizar progreso |
-| DELETE | `/api/progresos/borrar/{id}` | Eliminar progreso |
-| GET | `/api/progresos/usuario/{usuarioId}` | Progresos por usuario |
-| GET | `/api/progresos/fecha/{fecha}` | Progresos por fecha |
-| GET | `/api/progresos/usuario/{usuarioId}/fecha/{fecha}` | Progreso específico por usuario y fecha |
+| GET | `/v1/ejercicios` | Obtener todos los ejercicios |
+| GET | `/v1/ejercicios/buscar/{id}` | Obtener ejercicio por ID |
+| POST | `/v1/ejercicios` | Crear nuevo ejercicio |
+| PUT | `/v1/ejercicios/actualizar/{id}` | Actualizar ejercicio |
+| DELETE | `/v1/ejercicios/borrar/{id}` | Eliminar ejercicio |
+| GET | `/v1/ejercicios/categoria/{grupoMuscular}` | Ejercicios por grupo muscular |
 
-### 💳 Pagos (`/api/pagos`)
+### 📋 Rutinas (`/v1/rutinas`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/api/pagos` | Obtener todos los pagos |
-| GET | `/api/pagos/buscar/{id}` | Obtener pago por ID |
-| POST | `/api/pagos` | Crear nuevo pago |
-| GET | `/api/pagos/usuario/{usuarioId}` | Pagos por usuario |
-| GET | `/api/pagos/entrenador/{entrenadorId}` | Pagos por entrenador |
-| GET | `/api/pagos/fecha/{fecha}` | Pagos por fecha |
-| GET | `/api/pagos/estado/{estado}` | Pagos por estado |
+| GET | `/v1/rutinas` | Obtener todas las rutinas |
+| GET | `/v1/rutinas/buscar/{id}` | Obtener rutina por ID |
+| POST | `/v1/rutinas` | Crear nueva rutina |
+| PUT | `/v1/rutinas/actualizar/{id}` | Actualizar rutina |
+| DELETE | `/v1/rutinas/borrar/{id}` | Eliminar rutina |
+| GET | `/v1/rutinas/usuario/{usuarioId}` | Rutinas por usuario |
+| GET | `/v1/rutinas/entrenador/{entrenadorId}` | Rutinas por entrenador |
+
+### 📈 Progresos (`/v1/progresos`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/v1/progresos` | Obtener todos los progresos |
+| GET | `/v1/progresos/buscar/{id}` | Obtener progreso por ID |
+| POST | `/v1/progresos` | Crear nuevo progreso |
+| PUT | `/v1/progresos/actualizar/{id}` | Actualizar progreso |
+| DELETE | `/v1/progresos/borrar/{id}` | Eliminar progreso |
+| GET | `/v1/progresos/usuario/{usuarioId}` | Progresos por usuario |
+| GET | `/v1/progresos/fecha/{fecha}` | Progresos por fecha |
+| GET | `/v1/progresos/usuario/{usuarioId}/fecha/{fecha}` | Progreso específico por usuario y fecha |
+
+### 💳 Pagos (`/v1/pagos`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/v1/pagos` | Obtener todos los pagos |
+| GET | `/v1/pagos/buscar/{id}` | Obtener pago por ID |
+| POST | `/v1/pagos` | Crear nuevo pago |
+| GET | `/v1/pagos/usuario/{usuarioId}` | Pagos por usuario |
+| GET | `/v1/pagos/entrenador/{entrenadorId}` | Pagos por entrenador |
+| GET | `/v1/pagos/fecha/{fecha}` | Pagos por fecha |
+| GET | `/v1/pagos/estado/{estado}` | Pagos por estado |
 
 ## ⚙️ Configuración e Instalación
 
@@ -181,15 +226,25 @@ CREATE DATABASE fitmanager;
 
 2. **Configurar conexión en `application.properties`:**
 ```properties
-# Configuración de la base de datos
-spring.datasource.url=jdbc:mysql://localhost:3306/fitmanager?useSSL=false&serverTimezone=UTC
-spring.datasource.username=root
-spring.datasource.password=tu_password
+# Servidor
+server.port=9090
+server.servlet.context-path=/fitmanager
 
-# Configuración de JPA / Hibernate
-spring.jpa.hibernate.ddl-auto=create-drop
+# Base de datos PostgreSQL
+spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/fitmanager
+spring.datasource.username=postgres
+spring.datasource.password=tu_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# JWT Configuration
+jwt.secret=fitmanager-secret-key-2025-super-secure-token
+jwt.expiration=1800000
+jwt.inactivity-timeout=1800000
 ```
 
 ### Instalación y Ejecución
@@ -210,7 +265,18 @@ cd backend-FitManager
 ./mvnw spring-boot:run
 ```
 
-La aplicación estará disponible en: `http://localhost:8080`
+La aplicación estará disponible en: `http://localhost:9090/fitmanager/v1`
+
+### 🔐 Seguridad
+
+El sistema implementa las siguientes medidas de seguridad:
+
+- **Encriptación BCrypt**: Todas las contraseñas se almacenan encriptadas
+- **JWT Tokens**: Autenticación basada en tokens con expiración de 30 minutos
+- **Session Management**: Control de actividad e inactividad de sesión
+- **@JsonIgnore**: Las contraseñas nunca se exponen en respuestas JSON
+- **Bean Validation**: Validación robusta de todos los datos de entrada
+- **Role-based Access**: Control de acceso basado en roles (USUARIO, ENTRENADOR, ADMIN)
 
 ### Datos de Prueba
 
@@ -224,10 +290,12 @@ El proyecto incluye un archivo `database_test_data.sql` con datos de prueba que 
 
 **Para cargar los datos de prueba:**
 1. Ejecutar la aplicación para que JPA cree las tablas
-2. Ejecutar el script SQL en MySQL:
+2. Ejecutar el script SQL en PostgreSQL:
 ```bash
-mysql -u root -p fitmanager < database_test_data.sql
+psql -U postgres -d fitmanager -f database_test_data.sql
 ```
+
+⚠️ **Nota**: Debido a la encriptación BCrypt, deberás crear nuevos usuarios a través del endpoint de registro o actualizar las contraseñas en la base de datos.
 
 ## 🧪 Pruebas de la API
 
@@ -235,25 +303,34 @@ mysql -u root -p fitmanager < database_test_data.sql
 
 **Obtener todos los usuarios:**
 ```bash
-curl -X GET http://localhost:8080/api/usuarios
+curl -X GET http://localhost:9090/fitmanager/v1/usuarios
+```
+
+**Registro de usuario:**
+```bash
+curl -X POST http://localhost:9090/fitmanager/v1/auth/usuario/register \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Juan Pérez","email":"juan@email.com","password":"password123","edad":25,"altura":1.75,"pesoInicial":70.5}'
 ```
 
 **Login de usuario:**
 ```bash
-curl -X POST http://localhost:8080/api/usuarios/login \
+curl -X POST http://localhost:9090/fitmanager/v1/auth/usuario/login \
   -H "Content-Type: application/json" \
-  -d '{"correo":"juan.perez@email.com","contrasena":"password123"}'
+  -d '{"email":"juan@email.com","password":"password123"}'
 ```
 
-**Obtener rutinas de un usuario:**
+**Obtener rutinas de un usuario (con autenticación):**
 ```bash
-curl -X GET http://localhost:8080/api/rutinas/usuario/1
+curl -X GET http://localhost:9090/fitmanager/v1/rutinas/usuario/1 \
+  -H "Authorization: Bearer <tu-token-jwt>"
 ```
 
 **Crear un nuevo progreso:**
 ```bash
-curl -X POST http://localhost:8080/api/progresos \
+curl -X POST http://localhost:9090/fitmanager/v1/progresos \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <tu-token-jwt>" \
   -d '{"fecha":"2024-03-20","peso":75.5,"medidaPecho":95.0,"medidaCintura":82.0,"medidaBrazo":33.0,"usuario":{"idUsuario":1}}'
 ```
 
@@ -291,11 +368,15 @@ backend-FitManager/
 ### ✅ Funcionalidades Completadas
 
 - **CRUD completo** para todas las entidades
-- **Sistema de autenticación** básico para usuarios y entrenadores
+- **Sistema de autenticación JWT** con Spring Security
+- **Encriptación BCrypt** para contraseñas
+- **Bean Validation** con validaciones robustas
+- **Manejo global de excepciones** con respuestas consistentes
 - **Gestión de rutinas personalizadas** con detalles de ejercicios
 - **Seguimiento de progreso** con medidas corporales
 - **Sistema de pagos** con múltiples estados y tipos de suscripción
 - **Consultas especializadas** por fecha, usuario, entrenador, etc.
+- **Paginación** en endpoints de listado
 - **Relaciones JPA** correctamente mapeadas
 - **CORS habilitado** para integración frontend
 - **Datos de prueba** completos y realistas
@@ -304,9 +385,11 @@ backend-FitManager/
 
 - **RESTful Design**: Endpoints siguiendo principios REST
 - **JSON Response**: Todas las respuestas en formato JSON
-- **Error Handling**: Manejo básico de errores con ResponseEntity
+- **Error Handling**: Sistema global de manejo de excepciones con formato estandarizado
+- **Security**: JWT tokens, BCrypt, @JsonIgnore en campos sensibles
 - **Cross-Origin**: CORS configurado para desarrollo frontend
-- **Data Validation**: Validación a través de JPA constraints
+- **Data Validation**: Bean Validation con @Valid, @NotBlank, @Email, @Size, etc.
+- **Pagination**: Soporte de paginación con Spring Data Pageable
 
 ## 🔧 Configuración Avanzada
 
@@ -336,16 +419,20 @@ Puedes crear diferentes profiles para desarrollo y producción:
 
 ### 🔮 Funcionalidades Futuras
 
-- [ ] **Seguridad JWT**: Implementar Spring Security con JWT
-- [ ] **Validación de datos**: Bean Validation con anotaciones
+- [ ] **Refresh Tokens**: Implementar tokens de refresco para sesiones más largas
+- [ ] **Forgot Password**: Endpoint para recuperación de contraseña por email
+- [ ] **Rate Limiting**: Protección contra ataques de fuerza bruta
 - [ ] **Documentación API**: Integración con Swagger/OpenAPI
-- [ ] **Testing**: Unit tests y Integration tests
-- [ ] **Logging**: Sistema de logs estructurado
-- [ ] **Paginación**: Implementar paginación en consultas
-- [ ] **Filtros avanzados**: Búsquedas más complejas
+- [ ] **Testing**: Unit tests y Integration tests con JUnit y Mockito
+- [ ] **Logging**: Sistema de logs estructurado con SLF4J
+- [ ] **Auditoría**: Tracking de cambios (quién modificó qué y cuándo)
+- [ ] **Redis Cache**: Caché para mejorar rendimiento
+- [ ] **File Upload**: Subida de imágenes de perfil y progreso
+- [ ] **Reports**: Generación de reportes PDF de progreso
 - [ ] **Notificaciones**: Sistema de notificaciones push
-- [ ] **Reports**: Generación de reportes de progreso
-- [ ] **File Upload**: Subida de imágenes de perfil
+- [ ] **OAuth2**: Login social (Google, Facebook)
+- [ ] **Microservicios**: Migración a arquitectura de microservicios
+- [ ] **WebSockets**: Notificaciones en tiempo real
 
 ## 👥 Contribución
 
@@ -371,5 +458,5 @@ La base de datos incluye:
 
 ---
 
-*Última actualización: Octubre 2024*
-*Versión: 0.0.1-SNAPSHOT*
+*Última actualización: Noviembre 2025*
+*Versión: 0.1.0-SNAPSHOT*
