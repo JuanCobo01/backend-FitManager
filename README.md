@@ -545,7 +545,101 @@ Puedes crear diferentes profiles para desarrollo y producción:
 - [ ] **Microservicios**: Migración a arquitectura de microservicios
 - [ ] **WebSockets**: Notificaciones en tiempo real
 
-## 👥 Contribución
+## � Estrategia de Ramas (Git Flow)
+
+Este proyecto utiliza **Git Flow** para gestionar el desarrollo:
+
+### Ramas Principales
+
+- **`main`**: 
+  - Código estable y listo para producción
+  - Solo recibe merges desde `develop` o `hotfix/*`
+  - Representa releases oficiales
+  - **Protegida**: Requiere Pull Request para cambios
+
+- **`develop`**: 
+  - Rama de integración para desarrollo
+  - Contiene las últimas funcionalidades completadas
+  - Base para crear nuevas features
+  - Actualmente activa para desarrollo continuo
+
+### Ramas de Soporte
+
+- **`feature/*`**: Nuevas funcionalidades
+  ```bash
+  git checkout -b feature/nombre-funcionalidad develop
+  # Cuando esté lista
+  git checkout develop
+  git merge feature/nombre-funcionalidad
+  git push origin develop
+  ```
+
+- **`hotfix/*`**: Correcciones urgentes en producción
+  ```bash
+  git checkout -b hotfix/descripcion-bug main
+  # Después de arreglar
+  git checkout main
+  git merge hotfix/descripcion-bug
+  git checkout develop
+  git merge hotfix/descripcion-bug
+  ```
+
+- **`release/*`**: Preparación para producción
+  ```bash
+  git checkout -b release/v0.2.0 develop
+  # Ajustes finales, pruebas
+  git checkout main
+  git merge release/v0.2.0
+  git tag -a v0.2.0 -m "Release version 0.2.0"
+  git checkout develop
+  git merge release/v0.2.0
+  ```
+
+### Flujo de Trabajo
+
+1. **Desarrollar nueva funcionalidad**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/mi-funcionalidad
+   # ... hacer cambios ...
+   git add .
+   git commit -m "feat: descripción de la funcionalidad"
+   git push origin feature/mi-funcionalidad
+   ```
+
+2. **Integrar a develop**:
+   - Crear Pull Request en GitHub: `feature/mi-funcionalidad` → `develop`
+   - Revisar código
+   - Mergear PR
+
+3. **Release a producción**:
+   - Crear Pull Request: `develop` → `main`
+   - Probar exhaustivamente
+   - Mergear cuando esté listo para producción
+
+### Convenciones de Commits
+
+Usamos [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` Nueva funcionalidad
+- `fix:` Corrección de bug
+- `docs:` Cambios en documentación
+- `style:` Formateo, espacios en blanco
+- `refactor:` Refactorización de código
+- `test:` Agregar o modificar tests
+- `chore:` Tareas de mantenimiento
+
+**Ejemplos:**
+```bash
+git commit -m "feat: agregar endpoint de notificaciones"
+git commit -m "fix: corregir validación de edad en usuario"
+git commit -m "docs: actualizar README con módulo de perfil"
+```
+
+---
+
+## �👥 Contribución
 
 Este proyecto es parte del desarrollo académico de FitManager para la gestión integral de gimnasios.
 
