@@ -29,8 +29,22 @@ public class Ejercicio {
     @Pattern(regexp = "Pecho|Espalda|Piernas|Hombros|Brazos|Core|Cardio", 
              message = "El grupo muscular debe ser: Pecho, Espalda, Piernas, Hombros, Brazos, Core o Cardio")
     private String grupoMuscular;
+    
+    @Column(length = 100)
+    private String maquina; // Nombre de la máquina o equipo utilizado
+    
+    @Column(length = 255)
+    private String imagenUrl; // URL o path de la imagen del ejercicio
 
-    @OneToMany(mappedBy = "ejercicio")
+    @OneToMany(mappedBy = "ejercicio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "ejercicio-detalles")
     private List<DetalleRutina> detallesRutina;
+    
+    @OneToMany(mappedBy = "ejercicio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference(value = "ejercicio-instrucciones")
+    private List<EjercicioInstruccion> instrucciones;
+    
+    @OneToMany(mappedBy = "ejercicio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference(value = "ejercicio-tips")
+    private List<EjercicioTip> tips;
 }

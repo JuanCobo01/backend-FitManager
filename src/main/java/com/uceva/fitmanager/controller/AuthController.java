@@ -6,6 +6,7 @@ import com.uceva.fitmanager.exception.UnauthorizedException;
 import com.uceva.fitmanager.model.Administrador;
 import com.uceva.fitmanager.model.Entrenador;
 import com.uceva.fitmanager.model.Usuario;
+import com.uceva.fitmanager.model.dto.ChangePasswordDTO;
 import com.uceva.fitmanager.security.JwtService;
 import com.uceva.fitmanager.service.IAdministradorService;
 import com.uceva.fitmanager.service.IEntrenadorService;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -136,9 +138,14 @@ public class AuthController {
         }
     }
 
+    /**
+     * POST /auth/change-password
+     * Cambiar contraseña del usuario autenticado
+     * Para uso desde ChangePasswordPage en Flutter
+     */
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String authHeader,
-                                          @RequestBody ChangePasswordRequest request) {
+                                          @Valid @RequestBody ChangePasswordDTO request) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new UnauthorizedException("Token no proporcionado");
@@ -152,7 +159,10 @@ public class AuthController {
             String email = jwtService.extractEmail(token);
             String userType = jwtService.extractUserType(token);
             
-            validateChangePasswordRequest(request);
+            // Validación de que la nueva contraseña sea diferente
+            if (request.getCurrentPassword().equals(request.getNewPassword())) {
+                throw new BadRequestException("La nueva contraseña debe ser diferente a la actual");
+            }
             
             // Cambiar contraseña según el tipo de usuario
             switch (userType.toUpperCase()) {
@@ -398,18 +408,6 @@ public class AuthController {
         }
     }
 
-    private void validateChangePasswordRequest(ChangePasswordRequest request) {
-        if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
-            throw new BadRequestException("La contraseña actual es requerida");
-        }
-        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
-            throw new BadRequestException("La nueva contraseña debe tener al menos 6 caracteres");
-        }
-        if (request.getCurrentPassword().equals(request.getNewPassword())) {
-            throw new BadRequestException("La nueva contraseña debe ser diferente a la actual");
-        }
-    }
-
     // DTOs internos
     @lombok.Data
     public static class LoginRequest {
@@ -433,12 +431,6 @@ public class AuthController {
         private String email;
         private String password;
         private String especialidad;
-    }
-
-    @lombok.Data
-    public static class ChangePasswordRequest {
-        private String currentPassword;
-        private String newPassword;
     }
 
     @lombok.Data

@@ -12,8 +12,14 @@ public class DetalleRutina {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idDetalle;
 
-    private int repeticiones;
-    private int series;
+    private Integer orden; // Orden del ejercicio en la rutina
+    
+    private Integer series;
+    
+    @Column(length = 20)
+    private String repeticiones; // Ej: "8-10", "12", "3x30seg"
+    
+    private Integer descansoSegundos; // Tiempo de descanso en segundos
 
     @ManyToOne
     @JoinColumn(name = "id_rutina")

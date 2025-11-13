@@ -1,12 +1,16 @@
 package com.uceva.fitmanager.controller;
 
+import com.uceva.fitmanager.exception.BadRequestException;
+import com.uceva.fitmanager.exception.ResourceNotFoundException;
 import com.uceva.fitmanager.model.Usuario;
+import com.uceva.fitmanager.model.dto.UsuarioUpdateDTO;
 import com.uceva.fitmanager.service.IUsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,10 +35,41 @@ public class usuarioController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ENTRENADOR', 'USUARIO')")
     public ResponseEntity<Usuario> getUsuarioById(@PathVariable Long id) {
         return usuarioService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * PUT /usuarios/{id}
+     * Actualizar información del perfil del usuario
+     * Para uso desde EditProfilePage en Flutter
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
+    public ResponseEntity<Usuario> updateUsuarioPerfil(
+            @PathVariable Long id, 
+            @Valid @RequestBody UsuarioUpdateDTO dto) {
+        try {
+            Usuario usuario = usuarioService.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+            
+            // Actualizar campos
+            usuario.setNombre(dto.getNombre());
+            usuario.setCorreo(dto.getEmail());
+            usuario.setEdad(dto.getEdad());
+            usuario.setAltura(dto.getAltura()); // Ya viene en metros desde Flutter (cm/100)
+            usuario.setPesoActual(dto.getPeso());
+            
+            Usuario usuarioActualizado = usuarioService.save(usuario);
+            return ResponseEntity.ok(usuarioActualizado);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            throw new BadRequestException("Error al actualizar usuario: " + e.getMessage());
+        }
     }
 
     @PostMapping

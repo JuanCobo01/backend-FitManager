@@ -6,8 +6,10 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -44,7 +46,19 @@ public class Usuario {
     @DecimalMax(value = "500.0", message = "El peso debe ser menor a 500 kg")
     private double pesoInicial;
     
+    @DecimalMin(value = "1.0", message = "El peso actual debe ser mayor a 0")
+    @DecimalMax(value = "500.0", message = "El peso actual debe ser menor a 500 kg")
+    @Column(name = "peso_actual")
+    private Double pesoActual; // Peso actual en kg, puede ser null si no se ha actualizado
+    
+    @Column(length = 5)
+    private String idioma = "es"; // Idioma preferido: 'es' o 'en'
+    
     private LocalDate fechaRegistro;
+    
+    @UpdateTimestamp
+    @Column(name = "ultima_actualizacion")
+    private LocalDateTime ultimaActualizacion;
 
     // Relación con Rutinas
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -60,10 +74,34 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "usuario-pagos")
     private List<Pago> pagos;
+    
+    // Relación OneToOne con PreferenciasNotificaciones
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private PreferenciasNotificaciones preferenciasNotificaciones;
+    
+    // Relación OneToMany con Feedback
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Feedback> feedbacks;
 
     // Relación muchos a uno con Gimnasio (el usuario es cliente de un gimnasio)
     @ManyToOne
     @JoinColumn(name = "id_gimnasio")
     @JsonBackReference(value = "gim-usuario")
     private Gimnasio gimnasio;
+    
+    // Métodos de utilidad
+    public double getPesoActualOInicial() {
+        return pesoActual != null ? pesoActual : pesoInicial;
+    }
+    
+    public double getAlturaEnCm() {
+        return altura * 100;
+    }
+    
+    public double getImc() {
+        double peso = getPesoActualOInicial();
+        return peso / (altura * altura);
+    }
 }

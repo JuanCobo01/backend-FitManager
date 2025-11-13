@@ -16,7 +16,20 @@ public class Rutina {
     private Long idRutina;
 
     private String nombreRutina;
+    
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
+    
+    @Column(length = 50)
+    private String dificultad; // Principiante, Intermedio, Avanzado
+    
+    private Integer duracionMinutos;
+    
+    @Column(length = 100)
+    private String objetivo; // Ej: "Hipertrofia y Fuerza", "Resistencia", etc.
+    
+    @Column(length = 50)
+    private String icono; // Nombre del icono para el frontend
 
     @ManyToOne
     @JoinColumn(name = "id_usuario")
@@ -28,7 +41,7 @@ public class Rutina {
     @JsonBackReference(value = "entrenador-rutinas")
     private Entrenador entrenador;
 
-    @OneToMany(mappedBy = "rutina")
+    @OneToMany(mappedBy = "rutina", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "rutina-detalles")
     private List<DetalleRutina> detalles;
 }

@@ -87,6 +87,17 @@ src/main/java/com/uceva/fitmanager/
 - **Propósito**: Gestión de administradores del sistema
 - **Campos**: ID, nombre, correo, contraseña, rol
 
+#### PreferenciasNotificaciones
+- **Propósito**: Gestión de preferencias de notificaciones de usuarios
+- **Campos**: ID, recordatorios de entrenamiento, actualizaciones de progreso, nuevas rutinas, logros, notificaciones del sistema, notificaciones por email
+- **Valores por defecto**: La mayoría activados excepto nuevas rutinas y email
+- **Relaciones**: Uno a uno con Usuario
+
+#### Feedback
+- **Propósito**: Sistema de soporte y retroalimentación de usuarios
+- **Campos**: ID, mensaje, fecha, estado (PENDIENTE/REVISADO/RESUELTO), respuesta, fecha de respuesta
+- **Relaciones**: Muchos a uno con Usuario
+
 ## 🚀 API Endpoints
 
 ### � Autenticación (`/v1/auth`)
@@ -142,12 +153,27 @@ src/main/java/com/uceva/fitmanager/
 | GET | `/v1/usuarios/paginado` | Obtener usuarios con paginación |
 | GET | `/v1/usuarios/{id}` | Obtener usuario por ID |
 | POST | `/v1/usuarios` | Crear nuevo usuario |
+| PUT | `/v1/usuarios/{id}` | **Actualizar perfil de usuario** |
 | PUT | `/v1/usuarios/actualizar/{id}` | Actualizar usuario |
 | DELETE | `/v1/usuarios/borrar/{id}` | Eliminar usuario |
 
 **Ejemplo Paginación:**
 ```bash
 GET /v1/usuarios/paginado?page=0&size=10&sort=nombre,asc
+```
+
+**Ejemplo Actualizar Perfil:**
+```json
+PUT /v1/usuarios/1
+Authorization: Bearer {token}
+
+{
+  "nombre": "Juan Pérez",
+  "email": "juan@email.com",
+  "edad": 26,
+  "altura": 1.75,
+  "peso": 72.5
+}
 ```
 
 ### 🏋️ Entrenadores (`/v1/entrenadores`)
@@ -207,6 +233,81 @@ GET /v1/usuarios/paginado?page=0&size=10&sort=nombre,asc
 | GET | `/v1/pagos/entrenador/{entrenadorId}` | Pagos por entrenador |
 | GET | `/v1/pagos/fecha/{fecha}` | Pagos por fecha |
 | GET | `/v1/pagos/estado/{estado}` | Pagos por estado |
+
+### 🔔 Notificaciones (`/v1/usuarios/{userId}/notificaciones`)
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/v1/usuarios/{userId}/notificaciones` | Obtener preferencias de notificaciones | ADMIN, USUARIO |
+| PUT | `/v1/usuarios/{userId}/notificaciones` | Actualizar preferencias | ADMIN, USUARIO |
+
+**Ejemplo Obtener Preferencias:**
+```bash
+GET /v1/usuarios/1/notificaciones
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+{
+  "recordatoriosEntrenamiento": true,
+  "actualizacionesProgreso": true,
+  "nuevasRutinas": false,
+  "logros": true,
+  "notificacionesSistema": true,
+  "notificacionesEmail": false
+}
+```
+
+**Ejemplo Actualizar Preferencias:**
+```json
+PUT /v1/usuarios/1/notificaciones
+Authorization: Bearer {token}
+
+{
+  "recordatoriosEntrenamiento": true,
+  "actualizacionesProgreso": true,
+  "nuevasRutinas": true,
+  "logros": true,
+  "notificacionesSistema": true,
+  "notificacionesEmail": true
+}
+```
+
+### 💬 Feedback (`/v1/feedback`)
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/v1/feedback` | Enviar feedback/soporte | ADMIN, USUARIO, ENTRENADOR |
+| GET | `/v1/feedback` | Listar todos los feedbacks | ADMIN |
+| GET | `/v1/feedback/usuario/{usuarioId}` | Feedbacks de un usuario | ADMIN, USUARIO |
+| GET | `/v1/feedback/estado/{estado}` | Feedbacks por estado | ADMIN |
+| PUT | `/v1/feedback/{id}/estado` | Actualizar estado y respuesta | ADMIN |
+| DELETE | `/v1/feedback/{id}` | Eliminar feedback | ADMIN |
+
+**Estados disponibles:** `PENDIENTE`, `REVISADO`, `RESUELTO`
+
+**Ejemplo Enviar Feedback:**
+```json
+POST /v1/feedback
+Authorization: Bearer {token}
+
+{
+  "usuarioId": 1,
+  "mensaje": "Me gustaría que agregaran más ejercicios de cardio."
+}
+```
+
+**Ejemplo Responder Feedback (Admin):**
+```json
+PUT /v1/feedback/1/estado
+Authorization: Bearer {admin_token}
+
+{
+  "estado": "RESUELTO",
+  "respuesta": "Hemos agregado 5 nuevos ejercicios de cardio. ¡Gracias por tu sugerencia!"
+}
+```
 
 ## ⚙️ Configuración e Instalación
 
@@ -276,7 +377,9 @@ El sistema implementa las siguientes medidas de seguridad:
 - **Session Management**: Control de actividad e inactividad de sesión
 - **@JsonIgnore**: Las contraseñas nunca se exponen en respuestas JSON
 - **Bean Validation**: Validación robusta de todos los datos de entrada
-- **Role-based Access**: Control de acceso basado en roles (USUARIO, ENTRENADOR, ADMIN)
+- **Role-based Access**: Control de acceso basado en roles (USUARIO, ENTRENADOR, ADMINISTRADOR)
+- **Method Security**: `@PreAuthorize` en endpoints sensibles para control granular de permisos
+- **CORS**: Configurado para permitir integración con frontend Flutter
 
 ### Datos de Prueba
 
@@ -375,9 +478,15 @@ backend-FitManager/
 - **Gestión de rutinas personalizadas** con detalles de ejercicios
 - **Seguimiento de progreso** con medidas corporales
 - **Sistema de pagos** con múltiples estados y tipos de suscripción
+- **Módulo de Perfil completo**:
+  - Actualización de perfil de usuario (nombre, email, edad, altura, peso)
+  - Gestión de preferencias de notificaciones (6 tipos configurables)
+  - Cambio de contraseña con validación
+  - Sistema de feedback/soporte con estados (PENDIENTE/REVISADO/RESUELTO)
 - **Consultas especializadas** por fecha, usuario, entrenador, etc.
 - **Paginación** en endpoints de listado
 - **Relaciones JPA** correctamente mapeadas
+- **Control de acceso basado en roles** con @PreAuthorize
 - **CORS habilitado** para integración frontend
 - **Datos de prueba** completos y realistas
 
@@ -386,10 +495,12 @@ backend-FitManager/
 - **RESTful Design**: Endpoints siguiendo principios REST
 - **JSON Response**: Todas las respuestas en formato JSON
 - **Error Handling**: Sistema global de manejo de excepciones con formato estandarizado
-- **Security**: JWT tokens, BCrypt, @JsonIgnore en campos sensibles
-- **Cross-Origin**: CORS configurado para desarrollo frontend
-- **Data Validation**: Bean Validation con @Valid, @NotBlank, @Email, @Size, etc.
+- **Security**: JWT tokens, BCrypt, @JsonIgnore en campos sensibles, @PreAuthorize para control de acceso
+- **Cross-Origin**: CORS configurado para desarrollo frontend Flutter
+- **Data Validation**: Bean Validation con @Valid, @NotBlank, @Email, @Size, @Min, @Max, @DecimalMin, @DecimalMax
 - **Pagination**: Soporte de paginación con Spring Data Pageable
+- **Auto-creation**: Preferencias de notificaciones creadas automáticamente al primer acceso
+- **Timestamps**: Campos de auditoría con @CreationTimestamp y @UpdateTimestamp
 
 ## 🔧 Configuración Avanzada
 
@@ -456,7 +567,42 @@ La base de datos incluye:
 - **35+ Registros de progreso** con seguimiento temporal
 - **15+ Pagos** con diferentes estados y métodos
 
+## 🆕 Nuevas Funcionalidades (Módulo de Perfil)
+
+### Entidades Agregadas
+1. **PreferenciasNotificaciones**: Sistema de preferencias personalizable con 6 tipos de notificaciones
+2. **Feedback**: Sistema de soporte y retroalimentación con seguimiento de estados
+
+### DTOs Implementados
+- `UsuarioUpdateDTO`: Validación de datos de perfil (nombre, email, edad, altura, peso)
+- `ChangePasswordDTO`: Validación de cambio de contraseña (mínimo 8 caracteres)
+- `PreferenciasNotificacionesDTO`: Transferencia de preferencias de notificaciones
+- `FeedbackDTO`: Creación de mensajes de feedback
+
+### Controllers Agregados
+- `notificacionesController`: Gestión completa de preferencias de notificaciones
+- `feedbackController`: Sistema CRUD de feedback con control de estados
+
+### Validaciones Implementadas
+- **Nombre**: 2-100 caracteres
+- **Email**: Formato válido
+- **Edad**: 13-120 años
+- **Altura**: 0.5-3.0 metros
+- **Peso**: 20-500 kg
+- **Contraseña**: Mínimo 8 caracteres, debe ser diferente a la actual
+
+### Campos Agregados a Usuario
+- `pesoActual` (Double): Peso actual vs peso inicial
+- `idioma` (String): Preferencia de idioma (default: "es")
+- `ultimaActualizacion` (LocalDateTime): Timestamp automático de última modificación
+- Relaciones: PreferenciasNotificaciones (OneToOne), Feedback (OneToMany)
+
+### Métodos Utilitarios
+- `getPesoActualOInicial()`: Retorna peso actual o inicial si no hay peso actual registrado
+- `getAlturaEnCm()`: Convierte altura de metros a centímetros para visualización
+- `getImc()`: Calcula el Índice de Masa Corporal automáticamente
+
 ---
 
 *Última actualización: Noviembre 2025*
-*Versión: 0.1.0-SNAPSHOT*
+*Versión: 0.2.0-SNAPSHOT*
