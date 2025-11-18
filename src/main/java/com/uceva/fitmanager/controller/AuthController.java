@@ -8,14 +8,13 @@ import com.uceva.fitmanager.model.Administrador;
 import com.uceva.fitmanager.model.Entrenador;
 import com.uceva.fitmanager.model.PasswordResetToken;
 import com.uceva.fitmanager.model.Usuario;
-import com.uceva.fitmanager.model.dto.ChangePasswordDTO;
-import com.uceva.fitmanager.model.dto.ForgotPasswordDTO;
-import com.uceva.fitmanager.model.dto.ResetPasswordDTO;
+import com.uceva.fitmanager.model.dto.*;
 import com.uceva.fitmanager.repository.PasswordResetTokenRepository;
 import com.uceva.fitmanager.security.JwtService;
 import com.uceva.fitmanager.service.IAdministradorService;
 import com.uceva.fitmanager.service.IEntrenadorService;
 import com.uceva.fitmanager.service.IUsuarioService;
+import com.uceva.fitmanager.service.OAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,6 +41,7 @@ public class AuthController {
     private final IEntrenadorService entrenadorService;
     private final IAdministradorService administradorService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final OAuthService oAuthService;
 
     @PostMapping("/usuario/login")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
@@ -235,6 +235,77 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Token inválido");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al cerrar sesión");
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleAuth(@Valid @RequestBody GoogleAuthDTO request) {
+        try {
+            // Verify Google token
+            Map<String, Object> googleData = oAuthService.verifyGoogleToken(request.getIdToken());
+            
+            // Find or create user
+            Usuario usuario = oAuthService.findOrCreateUser(
+                (String) googleData.get("email"),
+                (String) googleData.get("name"),
+                "GOOGLE"
+            );
+            
+            // Generate JWT token
+            String token = jwtService.generateToken(
+                usuario.getCorreo(), 
+                "USUARIO", 
+                usuario.getIdUsuario()
+            );
+            
+            return ResponseEntity.ok(AuthResponse.builder()
+                .token(token)
+                .userType("USUARIO")
+                .userId(usuario.getIdUsuario())
+                .userName(usuario.getNombre())
+                .email(usuario.getCorreo())
+                .message("Login con Google exitoso")
+                .build());
+                
+        } catch (Exception e) {
+            throw new UnauthorizedException("Token de Google inválido: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/apple")
+    public ResponseEntity<?> appleAuth(@Valid @RequestBody AppleAuthDTO request) {
+        try {
+            // Verify Apple token
+            Map<String, Object> appleData = oAuthService.verifyAppleToken(
+                request.getIdentityToken(),
+                request.getAuthorizationCode()
+            );
+            
+            // Find or create user
+            Usuario usuario = oAuthService.findOrCreateUser(
+                (String) appleData.get("email"),
+                (String) appleData.get("name"),
+                "APPLE"
+            );
+            
+            // Generate JWT token
+            String token = jwtService.generateToken(
+                usuario.getCorreo(), 
+                "USUARIO", 
+                usuario.getIdUsuario()
+            );
+            
+            return ResponseEntity.ok(AuthResponse.builder()
+                .token(token)
+                .userType("USUARIO")
+                .userId(usuario.getIdUsuario())
+                .userName(usuario.getNombre())
+                .email(usuario.getCorreo())
+                .message("Login con Apple exitoso")
+                .build());
+                
+        } catch (Exception e) {
+            throw new UnauthorizedException("Token de Apple inválido: " + e.getMessage());
         }
     }
 
