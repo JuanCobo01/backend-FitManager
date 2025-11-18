@@ -213,6 +213,85 @@ Content-Type: application/json
 }
 ```
 
+**Ejemplo Recuperar desde Perfil - Paso 1:**
+```bash
+POST /v1/auth/request-password-reset-code
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Se ha enviado un código de verificación a tu correo",
+  "expiresIn": "15 minutos",
+  "email": "juan@email.com",
+  "code": "123456"
+}
+```
+
+**Ejemplo Recuperar desde Perfil - Paso 2:**
+```bash
+POST /v1/auth/reset-password-with-code
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "email": "juan@email.com",
+  "code": "123456",
+  "newPassword": "nueva_password_123"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Contraseña restablecida exitosamente. Por favor, vuelve a iniciar sesión"
+}
+```
+
+**Ejemplo Obtener Info de la App:**
+```bash
+GET /v1/configuracion/app-info
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "version": "1.0.0",
+    "buildNumber": "1",
+    "appName": "FitManager",
+    "privacyPolicyUrl": "https://fitmanager.com/privacidad",
+    "termsUrl": "https://fitmanager.com/terminos",
+    "licenseUrl": "https://fitmanager.com/licencia",
+    "supportEmail": "soporte@fitmanager.com"
+  },
+  "message": "Información de la aplicación obtenida exitosamente"
+}
+```
+
+**Ejemplo Obtener Info de Contacto:**
+```bash
+GET /v1/configuracion/contacto
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "email": "soporte@fitmanager.com",
+    "telefono": "+57 300 123 4567",
+    "chatUrl": "https://tawk.to/fitmanager",
+    "websiteUrl": "https://fitmanager.com/ayuda",
+    "direccion": "Calle 123 #45-67, Tuluá, Valle del Cauca, Colombia",
+    "horarioAtencion": "Lunes a Viernes: 8:00 AM - 6:00 PM\nSábados: 9:00 AM - 1:00 PM"
+  },
+  "message": "Información de contacto obtenida exitosamente"
+}
+```
+
 ### 👤 Usuarios (`/v1/usuarios`)
 
 | Método | Endpoint | Descripción |
