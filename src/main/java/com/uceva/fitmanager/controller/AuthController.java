@@ -2,11 +2,16 @@ package com.uceva.fitmanager.controller;
 
 import com.uceva.fitmanager.exception.BadRequestException;
 import com.uceva.fitmanager.exception.DuplicateResourceException;
+import com.uceva.fitmanager.exception.ResourceNotFoundException;
 import com.uceva.fitmanager.exception.UnauthorizedException;
 import com.uceva.fitmanager.model.Administrador;
 import com.uceva.fitmanager.model.Entrenador;
+import com.uceva.fitmanager.model.PasswordResetToken;
 import com.uceva.fitmanager.model.Usuario;
 import com.uceva.fitmanager.model.dto.ChangePasswordDTO;
+import com.uceva.fitmanager.model.dto.ForgotPasswordDTO;
+import com.uceva.fitmanager.model.dto.ResetPasswordDTO;
+import com.uceva.fitmanager.repository.PasswordResetTokenRepository;
 import com.uceva.fitmanager.security.JwtService;
 import com.uceva.fitmanager.service.IAdministradorService;
 import com.uceva.fitmanager.service.IEntrenadorService;
@@ -14,13 +19,16 @@ import com.uceva.fitmanager.service.IUsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,6 +41,7 @@ public class AuthController {
     private final IUsuarioService usuarioService;
     private final IEntrenadorService entrenadorService;
     private final IAdministradorService administradorService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @PostMapping("/usuario/login")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
@@ -290,6 +299,276 @@ public class AuthController {
                     .valid(false)
                     .message("Error al verificar token: " + e.getMessage())
                     .build());
+        }
+    }
+
+    /**
+     * POST /auth/forgot-password
+     * Solicitar código de recuperación de contraseña
+     * Genera código de 6 dígitos y lo envía por email (simulado por ahora)
+     */
+    @PostMapping("/forgot-password")
+    @Transactional
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordDTO request) {
+        try {
+            String email = request.getEmail();
+            
+            // Verificar si el email existe en alguna tabla
+            boolean emailExists = usuarioService.findByEmailAndPassword(email, "").isPresent() ||
+                                 entrenadorService.findByEmailAndPassword(email, "").isPresent() ||
+                                 administradorService.findByEmailAndPassword(email, "").isPresent();
+            
+            if (!emailExists) {
+                throw new ResourceNotFoundException("No se encontró ninguna cuenta con ese email");
+            }
+            
+            // Invalidar tokens anteriores del mismo email
+            passwordResetTokenRepository.deleteByEmail(email);
+            
+            // Generar código de 6 dígitos
+            String code = generateVerificationCode();
+            
+            // Crear token con expiración de 15 minutos
+            PasswordResetToken token = new PasswordResetToken();
+            token.setEmail(email);
+            token.setCode(code);
+            token.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            token.setUsed(false);
+            
+            passwordResetTokenRepository.save(token);
+            
+            // TODO: Enviar email con el código
+            // Por ahora, en desarrollo, retornamos el código en la respuesta
+            // En producción, esto debe removerse y solo enviar el email
+            System.out.println("=== CÓDIGO DE RECUPERACIÓN ===");
+            System.out.println("Email: " + email);
+            System.out.println("Código: " + code);
+            System.out.println("Expira: " + token.getExpiresAt());
+            System.out.println("==============================");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Se ha enviado un código de verificación a tu correo");
+            response.put("expiresIn", "15 minutos");
+            // Solo para desarrollo - REMOVER EN PRODUCCIÓN
+            response.put("code", code); // SOLO PARA PRUEBAS
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al solicitar recuperación de contraseña: " + e.getMessage());
+        }
+    }
+
+    /**
+     * POST /auth/reset-password
+     * Restablecer contraseña usando código de verificación
+     */
+    @PostMapping("/reset-password")
+    @Transactional
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDTO request) {
+        try {
+            // Buscar token válido
+            PasswordResetToken token = passwordResetTokenRepository
+                    .findByEmailAndCodeAndUsedFalse(request.getEmail(), request.getCode())
+                    .orElseThrow(() -> new BadRequestException("Código inválido o ya utilizado"));
+            
+            // Verificar si expiró
+            if (token.isExpired()) {
+                throw new BadRequestException("El código ha expirado. Solicita uno nuevo");
+            }
+            
+            // Cambiar contraseña según el tipo de usuario
+            Optional<Usuario> usuarioOpt = usuarioService.findByEmailAndPassword(request.getEmail(), "");
+            Optional<Entrenador> entrenadorOpt = entrenadorService.findByEmailAndPassword(request.getEmail(), "");
+            Optional<Administrador> administradorOpt = administradorService.findByEmailAndPassword(request.getEmail(), "");
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                usuario.setContrasena(request.getNewPassword());
+                usuarioService.update(usuario.getIdUsuario(), usuario);
+            } else if (entrenadorOpt.isPresent()) {
+                Entrenador entrenador = entrenadorOpt.get();
+                entrenador.setContrasena(request.getNewPassword());
+                entrenadorService.update(entrenador.getIdEntrenador(), entrenador);
+            } else if (administradorOpt.isPresent()) {
+                Administrador administrador = administradorOpt.get();
+                administrador.setContrasena(request.getNewPassword());
+                administradorService.update(administrador.getIdAdmin(), administrador);
+            } else {
+                throw new ResourceNotFoundException("No se encontró el usuario");
+            }
+            
+            // Marcar token como usado
+            token.setUsed(true);
+            passwordResetTokenRepository.save(token);
+            
+            // Invalidar sesiones activas del usuario
+            jwtService.invalidateUserToken(request.getEmail());
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Contraseña restablecida exitosamente");
+            return ResponseEntity.ok(response);
+            
+        } catch (BadRequestException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al restablecer contraseña: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generar código de verificación de 6 dígitos
+     */
+    private String generateVerificationCode() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000); // Genera número entre 100000 y 999999
+        return String.valueOf(code);
+    }
+
+    /**
+     * POST /auth/request-password-reset-code
+     * Solicitar código de recuperación desde el perfil (usuario autenticado)
+     * Alternativa a "Olvidé mi contraseña" cuando el usuario está en ChangePasswordPage
+     */
+    @PostMapping("/request-password-reset-code")
+    @Transactional
+    public ResponseEntity<?> requestPasswordResetCode(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Token no proporcionado");
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtService.validateToken(token)) {
+                throw new UnauthorizedException("Token inválido o expirado");
+            }
+            
+            String email = jwtService.extractEmail(token);
+            
+            // Invalidar tokens anteriores del mismo email
+            passwordResetTokenRepository.deleteByEmail(email);
+            
+            // Generar código de 6 dígitos
+            String code = generateVerificationCode();
+            
+            // Crear token con expiración de 15 minutos
+            PasswordResetToken resetToken = new PasswordResetToken();
+            resetToken.setEmail(email);
+            resetToken.setCode(code);
+            resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            resetToken.setUsed(false);
+            
+            passwordResetTokenRepository.save(resetToken);
+            
+            // Log para desarrollo
+            System.out.println("=== CÓDIGO DE RECUPERACIÓN (DESDE PERFIL) ===");
+            System.out.println("Email: " + email);
+            System.out.println("Código: " + code);
+            System.out.println("Expira: " + resetToken.getExpiresAt());
+            System.out.println("===========================================");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Se ha enviado un código de verificación a tu correo");
+            response.put("expiresIn", "15 minutos");
+            response.put("email", email);
+            // Solo para desarrollo - REMOVER EN PRODUCCIÓN
+            response.put("code", code); // SOLO PARA PRUEBAS
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (UnauthorizedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al solicitar código de recuperación: " + e.getMessage());
+        }
+    }
+
+    /**
+     * POST /auth/reset-password-with-code
+     * Restablecer contraseña usando código (desde perfil, sin necesidad de contraseña actual)
+     * Alternativa al change-password cuando el usuario olvidó su contraseña actual
+     */
+    @PostMapping("/reset-password-with-code")
+    @Transactional
+    public ResponseEntity<?> resetPasswordWithCode(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody ResetPasswordDTO request) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Token no proporcionado");
+            }
+            
+            String token = authHeader.substring(7);
+            if (!jwtService.validateToken(token)) {
+                throw new UnauthorizedException("Token inválido o expirado");
+            }
+            
+            String authenticatedEmail = jwtService.extractEmail(token);
+            
+            // Verificar que el email del request coincide con el del token
+            if (!authenticatedEmail.equalsIgnoreCase(request.getEmail())) {
+                throw new BadRequestException("El email no coincide con el usuario autenticado");
+            }
+            
+            // Buscar token válido
+            PasswordResetToken resetToken = passwordResetTokenRepository
+                    .findByEmailAndCodeAndUsedFalse(request.getEmail(), request.getCode())
+                    .orElseThrow(() -> new BadRequestException("Código inválido o ya utilizado"));
+            
+            // Verificar si expiró
+            if (resetToken.isExpired()) {
+                throw new BadRequestException("El código ha expirado. Solicita uno nuevo");
+            }
+            
+            // Cambiar contraseña según el tipo de usuario
+            String userType = jwtService.extractUserType(token);
+            
+            switch (userType.toUpperCase()) {
+                case "USUARIO":
+                    Optional<Usuario> usuarioOpt = usuarioService.findByEmailAndPassword(request.getEmail(), "");
+                    if (usuarioOpt.isPresent()) {
+                        Usuario usuario = usuarioOpt.get();
+                        usuario.setContrasena(request.getNewPassword());
+                        usuarioService.update(usuario.getIdUsuario(), usuario);
+                    }
+                    break;
+                    
+                case "ENTRENADOR":
+                    Optional<Entrenador> entrenadorOpt = entrenadorService.findByEmailAndPassword(request.getEmail(), "");
+                    if (entrenadorOpt.isPresent()) {
+                        Entrenador entrenador = entrenadorOpt.get();
+                        entrenador.setContrasena(request.getNewPassword());
+                        entrenadorService.update(entrenador.getIdEntrenador(), entrenador);
+                    }
+                    break;
+                    
+                case "ADMINISTRADOR":
+                    Optional<Administrador> administradorOpt = administradorService.findByEmailAndPassword(request.getEmail(), "");
+                    if (administradorOpt.isPresent()) {
+                        Administrador administrador = administradorOpt.get();
+                        administrador.setContrasena(request.getNewPassword());
+                        administradorService.update(administrador.getIdAdmin(), administrador);
+                    }
+                    break;
+            }
+            
+            // Marcar token como usado
+            resetToken.setUsed(true);
+            passwordResetTokenRepository.save(resetToken);
+            
+            // Invalidar sesiones activas del usuario
+            jwtService.invalidateUserToken(request.getEmail());
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Contraseña restablecida exitosamente. Por favor, vuelve a iniciar sesión");
+            return ResponseEntity.ok(response);
+            
+        } catch (UnauthorizedException | BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Error al restablecer contraseña: " + e.getMessage());
         }
     }
 

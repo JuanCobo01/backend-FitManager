@@ -109,8 +109,12 @@ src/main/java/com/uceva/fitmanager/
 | POST | `/v1/auth/administrador/login` | Login de administrador |
 | POST | `/v1/auth/usuario/register` | Registro de nuevo usuario |
 | POST | `/v1/auth/entrenador/register` | Registro de nuevo entrenador |
-| POST | `/v1/auth/change-password` | Cambiar contraseña (requiere autenticación) |
-| POST | `/v1/auth/verify-token` | **Verificar validez de token JWT** |
+| POST | `/v1/auth/change-password` | Cambiar contraseña con contraseña actual |
+| POST | `/v1/auth/verify-token` | Verificar validez de token JWT |
+| POST | `/v1/auth/forgot-password` | Solicitar código (sin autenticación) |
+| POST | `/v1/auth/reset-password` | Restablecer con código (sin autenticación) |
+| POST | `/v1/auth/request-password-reset-code` | **Solicitar código desde perfil (autenticado)** |
+| POST | `/v1/auth/reset-password-with-code` | **Restablecer desde perfil con código** |
 | POST | `/v1/auth/logout` | Cerrar sesión |
 | POST | `/v1/auth/refresh-activity` | Refrescar actividad de sesión |
 
@@ -167,6 +171,45 @@ Authorization: Bearer {token}
 {
   "valid": false,
   "message": "Token inválido o expirado"
+}
+```
+
+**Ejemplo Recuperar Contraseña - Paso 1:**
+```bash
+POST /v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "juan@email.com"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Se ha enviado un código de verificación a tu correo",
+  "expiresIn": "15 minutos",
+  "code": "123456"
+}
+```
+*Nota: El campo `code` solo aparece en desarrollo. En producción se envía por email.*
+
+**Ejemplo Recuperar Contraseña - Paso 2:**
+```bash
+POST /v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "juan@email.com",
+  "code": "123456",
+  "newPassword": "nueva_password_123"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Contraseña restablecida exitosamente"
 }
 ```
 
@@ -309,6 +352,14 @@ Authorization: Bearer {token}
 | GET | `/v1/feedback/estado/{estado}` | Feedbacks por estado | ADMIN |
 | PUT | `/v1/feedback/{id}/estado` | Actualizar estado y respuesta | ADMIN |
 | DELETE | `/v1/feedback/{id}` | Eliminar feedback | ADMIN |
+
+### ⚙️ Configuración (`/v1/configuracion`)
+
+| Método | Endpoint | Descripción | Autenticación |
+|--------|----------|-------------|---------------|
+| GET | `/v1/configuracion/app-info` | Información de la aplicación | No requerida |
+| GET | `/v1/configuracion/contacto` | Información de contacto | No requerida |
+| GET | `/v1/configuracion/idiomas` | Idiomas disponibles | No requerida |
 
 **Estados disponibles:** `PENDIENTE`, `REVISADO`, `RESUELTO`
 
