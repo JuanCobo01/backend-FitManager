@@ -249,6 +249,50 @@ public class AuthController {
         }
     }
 
+    /**
+     * POST /auth/verify-token
+     * Verificar si un token JWT es válido
+     * Endpoint para el frontend validar tokens antes de hacer requests
+     */
+    @PostMapping("/verify-token")
+    public ResponseEntity<?> verifyToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.ok(TokenVerificationResponse.builder()
+                        .valid(false)
+                        .message("Token no proporcionado")
+                        .build());
+            }
+
+            String token = authHeader.substring(7);
+            
+            if (jwtService.validateToken(token)) {
+                // Token válido, extraer información
+                String email = jwtService.extractEmail(token);
+                String userType = jwtService.extractUserType(token);
+                Long userId = jwtService.extractUserId(token);
+                
+                return ResponseEntity.ok(TokenVerificationResponse.builder()
+                        .valid(true)
+                        .userId(userId)
+                        .userType(userType)
+                        .email(email)
+                        .build());
+            } else {
+                // Token inválido o expirado
+                return ResponseEntity.ok(TokenVerificationResponse.builder()
+                        .valid(false)
+                        .message("Token inválido o expirado")
+                        .build());
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(TokenVerificationResponse.builder()
+                    .valid(false)
+                    .message("Error al verificar token: " + e.getMessage())
+                    .build());
+        }
+    }
+
     private ResponseEntity<?> authenticateUser(LoginRequest loginRequest, String userType) {
         try {
             switch (userType) {
@@ -442,6 +486,16 @@ public class AuthController {
         private String userName;
         private String email;
         private String especialidad; // Solo para entrenadores
+        private String message;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class TokenVerificationResponse {
+        private boolean valid;
+        private Long userId;
+        private String userType;
+        private String email;
         private String message;
     }
 }

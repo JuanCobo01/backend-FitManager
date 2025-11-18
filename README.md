@@ -100,7 +100,7 @@ src/main/java/com/uceva/fitmanager/
 
 ## 🚀 API Endpoints
 
-### � Autenticación (`/v1/auth`)
+### 🔐 Autenticación (`/v1/auth`)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -110,6 +110,7 @@ src/main/java/com/uceva/fitmanager/
 | POST | `/v1/auth/usuario/register` | Registro de nuevo usuario |
 | POST | `/v1/auth/entrenador/register` | Registro de nuevo entrenador |
 | POST | `/v1/auth/change-password` | Cambiar contraseña (requiere autenticación) |
+| POST | `/v1/auth/verify-token` | **Verificar validez de token JWT** |
 | POST | `/v1/auth/logout` | Cerrar sesión |
 | POST | `/v1/auth/refresh-activity` | Refrescar actividad de sesión |
 
@@ -142,6 +143,30 @@ src/main/java/com/uceva/fitmanager/
   "edad": 25,
   "altura": 1.75,
   "pesoInicial": 70.5
+}
+```
+
+**Ejemplo Verificar Token:**
+```bash
+POST /v1/auth/verify-token
+Authorization: Bearer {token}
+```
+
+**Respuesta Token Válido:**
+```json
+{
+  "valid": true,
+  "userId": 1,
+  "userType": "USUARIO",
+  "email": "juan@email.com"
+}
+```
+
+**Respuesta Token Inválido:**
+```json
+{
+  "valid": false,
+  "message": "Token inválido o expirado"
 }
 ```
 
