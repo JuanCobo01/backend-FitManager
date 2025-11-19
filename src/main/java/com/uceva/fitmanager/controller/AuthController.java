@@ -151,6 +151,7 @@ public class AuthController {
      * POST /auth/change-password
      * Cambiar contraseña del usuario autenticado
      * Para uso desde ChangePasswordPage en Flutter
+     * Soporta usuarios OAuth (permite establecer contraseña si no tienen una)
      */
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String authHeader,
@@ -176,11 +177,20 @@ public class AuthController {
             // Cambiar contraseña según el tipo de usuario
             switch (userType.toUpperCase()) {
                 case "USUARIO":
-                    Optional<Usuario> usuarioOpt = usuarioService.findByEmailAndPassword(email, request.getCurrentPassword());
-                    if (usuarioOpt.isEmpty()) {
-                        throw new UnauthorizedException("Contraseña actual incorrecta");
+                    Usuario usuario = usuarioService.findByCorreo(email)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                    
+                    // Si es usuario OAuth (contraseña empieza con "OAUTH_"), permitir establecer contraseña
+                    boolean isOAuthUser = usuario.getContrasena().startsWith("OAUTH_");
+                    
+                    if (!isOAuthUser) {
+                        // Usuario normal: verificar contraseña actual
+                        Optional<Usuario> usuarioOpt = usuarioService.findByEmailAndPassword(email, request.getCurrentPassword());
+                        if (usuarioOpt.isEmpty()) {
+                            throw new UnauthorizedException("Contraseña actual incorrecta");
+                        }
                     }
-                    Usuario usuario = usuarioOpt.get();
+                    
                     usuario.setContrasena(request.getNewPassword());
                     usuarioService.update(usuario.getIdUsuario(), usuario);
                     break;
@@ -242,12 +252,12 @@ public class AuthController {
     public ResponseEntity<?> googleAuth(@Valid @RequestBody GoogleAuthDTO request) {
         try {
             // Verify Google token
-            Map<String, Object> googleData = oAuthService.verifyGoogleToken(request.getIdToken());
+            OAuthService.GoogleUserInfo googleData = oAuthService.verifyGoogleToken(request.getIdToken());
             
             // Find or create user
             Usuario usuario = oAuthService.findOrCreateUser(
-                (String) googleData.get("email"),
-                (String) googleData.get("name"),
+                googleData.getEmail(),
+                googleData.getName(),
                 "GOOGLE"
             );
             
@@ -276,15 +286,15 @@ public class AuthController {
     public ResponseEntity<?> appleAuth(@Valid @RequestBody AppleAuthDTO request) {
         try {
             // Verify Apple token
-            Map<String, Object> appleData = oAuthService.verifyAppleToken(
+            OAuthService.AppleUserInfo appleData = oAuthService.verifyAppleToken(
                 request.getIdentityToken(),
                 request.getAuthorizationCode()
             );
             
             // Find or create user
             Usuario usuario = oAuthService.findOrCreateUser(
-                (String) appleData.get("email"),
-                (String) appleData.get("name"),
+                appleData.getEmail(),
+                appleData.getName(),
                 "APPLE"
             );
             

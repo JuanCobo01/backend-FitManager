@@ -36,6 +36,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Rutas públicas - no requieren autenticación
                 .requestMatchers("/v1/auth/**").permitAll()
+                .requestMatchers("/v1/configuracion/**").permitAll() // Endpoints de configuración públicos
                 .requestMatchers("/v1/usuarios/login").permitAll()
                 .requestMatchers("/v1/entrenadores/login").permitAll()
                 .requestMatchers("/v1/administradores/login").permitAll()
@@ -54,6 +55,8 @@ public class SecurityConfig {
                 // Rutas para usuarios
                 .requestMatchers("/v1/usuarios/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
                 .requestMatchers("/v1/progresos/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
+                .requestMatchers("/v1/notificaciones/**").hasAnyRole("ADMINISTRADOR", "USUARIO")
+                .requestMatchers("/v1/feedback/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR", "USUARIO")
 
                 // Rutas financieras - solo admin y entrenadores
                 .requestMatchers("/v1/pagos/**").hasAnyRole("ADMINISTRADOR", "ENTRENADOR")

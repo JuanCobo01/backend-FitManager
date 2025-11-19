@@ -6,25 +6,29 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.uceva.fitmanager.exception.UnauthorizedException;
+import com.uceva.fitmanager.model.Usuario;
+import com.uceva.fitmanager.repository.usuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class OAuthService {
+
+    private final usuarioRepository usuarioRepository;
 
     @Value("${oauth.google.client-id:}")
     private String googleClientId;
 
-    private final WebClient webClient;
-
-    public OAuthService() {
-        this.webClient = WebClient.builder().build();
-    }
+    private final WebClient webClient = WebClient.builder().build();
 
     /**
      * Verificar token de Google y extraer información del usuario
@@ -143,5 +147,29 @@ public class OAuthService {
         private String name;
         private String appleId;
         private Boolean emailVerified;
+    }
+
+    /**
+     * Encontrar o crear usuario basado en OAuth
+     */
+    public Usuario findOrCreateUser(String email, String name, String provider) {
+        Optional<Usuario> existingUser = usuarioRepository.findByCorreo(email);
+        
+        if (existingUser.isPresent()) {
+            return existingUser.get();
+        }
+        
+        // Crear nuevo usuario
+        Usuario newUser = new Usuario();
+        newUser.setCorreo(email);
+        newUser.setNombre(name != null ? name : "Usuario " + provider);
+        // Contraseña especial para usuarios OAuth - no pueden usar login tradicional
+        newUser.setContrasena("OAUTH_" + provider + "_" + System.currentTimeMillis());
+        newUser.setEdad(25);
+        newUser.setAltura(1.70);
+        newUser.setPesoInicial(70.0);
+        newUser.setFechaRegistro(LocalDate.now());
+        
+        return usuarioRepository.save(newUser);
     }
 }

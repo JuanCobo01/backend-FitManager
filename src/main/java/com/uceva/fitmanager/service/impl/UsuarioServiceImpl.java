@@ -36,6 +36,11 @@ public class UsuarioServiceImpl implements IUsuarioService {
     }
 
     @Override
+    public Optional<Usuario> findByCorreo(String correo) {
+        return usuarioRepository.findByCorreo(correo);
+    }
+
+    @Override
     public Usuario save(Usuario usuario) {
         // Encriptar la contraseña antes de guardar
         if (usuario.getContrasena() != null && !usuario.getContrasena().isEmpty()) {

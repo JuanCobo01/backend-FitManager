@@ -11,6 +11,7 @@ public interface IUsuarioService {
     List<Usuario> findAll();
     Page<Usuario> findAllPaginated(Pageable pageable);
     Optional<Usuario> findById(Long id);
+    Optional<Usuario> findByCorreo(String correo);
     Usuario save(Usuario usuario);
     void delete(Long id);
     Usuario update(Long id, Usuario usuarioActualizado);
