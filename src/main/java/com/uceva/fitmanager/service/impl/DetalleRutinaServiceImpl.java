@@ -2,8 +2,6 @@ package com.uceva.fitmanager.service.impl;
 
 import com.uceva.fitmanager.model.DetalleRutina;
 import com.uceva.fitmanager.repository.detalleRutinaRepository;
-import com.uceva.fitmanager.repository.rutinaRepository;
-import com.uceva.fitmanager.repository.ejercicioRepository;
 import com.uceva.fitmanager.service.IDetalleRutinaService;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +12,9 @@ import java.util.Optional;
 public class DetalleRutinaServiceImpl implements IDetalleRutinaService {
 
     private final detalleRutinaRepository detalleRutinaRepository;
-    private final rutinaRepository rutinaRepository;
-    private final ejercicioRepository ejercicioRepository;
 
-    public DetalleRutinaServiceImpl(detalleRutinaRepository detalleRutinaRepository, rutinaRepository rutinaRepository, ejercicioRepository ejercicioRepository) {
+    public DetalleRutinaServiceImpl(detalleRutinaRepository detalleRutinaRepository) {
         this.detalleRutinaRepository = detalleRutinaRepository;
-        this.rutinaRepository = rutinaRepository;
-        this.ejercicioRepository = ejercicioRepository;
     }
 
     @Override

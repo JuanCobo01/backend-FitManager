@@ -12,7 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/usuarios/{userId}/notificaciones")
+@RequestMapping("/v1/usuarios/{userId}/notificaciones")
 @CrossOrigin(origins = "*")
 public class notificacionesController {
 

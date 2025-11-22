@@ -11,12 +11,9 @@ import com.uceva.fitmanager.repository.usuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -27,8 +24,6 @@ public class OAuthService {
 
     @Value("${oauth.google.client-id:}")
     private String googleClientId;
-
-    private final WebClient webClient = WebClient.builder().build();
 
     /**
      * Verificar token de Google y extraer información del usuario
@@ -80,8 +75,6 @@ public class OAuthService {
             if (parts.length < 2) {
                 throw new UnauthorizedException("Formato de token inválido");
             }
-            
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
             
             // Parsear JSON básico (simplificado para desarrollo)
             // En producción, esto NO debe usarse

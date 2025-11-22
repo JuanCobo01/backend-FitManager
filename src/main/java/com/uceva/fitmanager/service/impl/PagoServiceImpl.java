@@ -2,8 +2,6 @@ package com.uceva.fitmanager.service.impl;
 
 import com.uceva.fitmanager.model.Pago;
 import com.uceva.fitmanager.repository.pagoRepository;
-import com.uceva.fitmanager.repository.usuarioRepository;
-import com.uceva.fitmanager.repository.entrenadorRepository;
 import com.uceva.fitmanager.service.IPagoService;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +13,9 @@ import java.util.Optional;
 public class PagoServiceImpl implements IPagoService {
 
     private final pagoRepository pagoRepository;
-    private final usuarioRepository usuarioRepository;
-    private final entrenadorRepository entrenadorRepository;
 
-    public PagoServiceImpl(pagoRepository pagoRepository, usuarioRepository usuarioRepository, entrenadorRepository entrenadorRepository) {
+    public PagoServiceImpl(pagoRepository pagoRepository) {
         this.pagoRepository = pagoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.entrenadorRepository = entrenadorRepository;
     }
 
     @Override

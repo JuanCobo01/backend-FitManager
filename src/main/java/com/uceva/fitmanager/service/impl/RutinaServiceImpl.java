@@ -7,8 +7,6 @@ import com.uceva.fitmanager.model.dto.EjercicioDetalleDTO;
 import com.uceva.fitmanager.model.dto.RutinaResponseDTO;
 import com.uceva.fitmanager.model.dto.RutinaSimpleDTO;
 import com.uceva.fitmanager.repository.rutinaRepository;
-import com.uceva.fitmanager.repository.usuarioRepository;
-import com.uceva.fitmanager.repository.entrenadorRepository;
 import com.uceva.fitmanager.service.IRutinaService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +19,9 @@ import java.util.stream.Collectors;
 public class RutinaServiceImpl implements IRutinaService {
 
     private final rutinaRepository rutinaRepository;
-    private final usuarioRepository usuarioRepository;
-    private final entrenadorRepository entrenadorRepository;
 
-    public RutinaServiceImpl(rutinaRepository rutinaRepository, usuarioRepository usuarioRepository, entrenadorRepository entrenadorRepository) {
+    public RutinaServiceImpl(rutinaRepository rutinaRepository) {
         this.rutinaRepository = rutinaRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.entrenadorRepository = entrenadorRepository;
     }
 
     @Override

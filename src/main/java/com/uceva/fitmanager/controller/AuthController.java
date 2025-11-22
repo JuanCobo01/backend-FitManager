@@ -17,7 +17,6 @@ import com.uceva.fitmanager.service.IUsuarioService;
 import com.uceva.fitmanager.service.OAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,13 +29,12 @@ import java.util.Optional;
 import java.util.Random;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/v1/auth")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final JwtService jwtService;
-    private final PasswordEncoder passwordEncoder;
     private final IUsuarioService usuarioService;
     private final IEntrenadorService entrenadorService;
     private final IAdministradorService administradorService;
@@ -418,7 +416,7 @@ public class AuthController {
             
             passwordResetTokenRepository.save(token);
             
-            // TODO: Enviar email con el código
+            // NOTA: En producción, implementar envío de email con servicio SMTP
             // Por ahora, en desarrollo, retornamos el código en la respuesta
             // En producción, esto debe removerse y solo enviar el email
             System.out.println("=== CÓDIGO DE RECUPERACIÓN ===");

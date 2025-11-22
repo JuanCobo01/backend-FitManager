@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/feedback")
+@RequestMapping("/v1/feedback")
 @CrossOrigin(origins = "*")
 public class feedbackController {
 

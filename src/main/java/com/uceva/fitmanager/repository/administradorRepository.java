@@ -2,7 +2,6 @@ package com.uceva.fitmanager.repository;
 
 import com.uceva.fitmanager.model.Administrador;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
